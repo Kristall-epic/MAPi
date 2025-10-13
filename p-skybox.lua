@@ -1,3 +1,5 @@
+--Custom skybox by flipflopbell
+
 E_MODEL_SKYBOX_CUSTOM_BOX = smlua_model_util_get_id("3DSkyboxCube_geo")
 E_MODEL_SKYBOX_CUSTOM_ICO = smlua_model_util_get_id("3DSkyboxIco_geo")
 -- Behavior
@@ -18,4 +20,15 @@ function bhv_mapiskybox_loop(o)
  --  obj_set_billboard(o)
 end
 
+function bhv_mapiskyboxvanilla_loop(o)
+    o.oPosX = l.pos.x
+    o.oPosY = l.pos.y
+    o.oPosZ = l.pos.z
+   o.oFaceAngleYaw = approach_s16_asymptotic(o.oFaceAngleYaw, l.yaw, 64)
+   -- o.oFaceAnglePitch = lerp(o.oFaceAnglePitch, s16(l.roll), 0.8)
+--obj_set_cylboard(o)
+end
+
 id_bhvmapiskybox = hook_behavior(bhvmapiskybox, OBJ_LIST_LEVEL, false, bhv_mapiskybox_init, bhv_mapiskybox_loop)
+
+id_bhvmapiskyboxvanilla = hook_behavior(bhvmapiskyboxvanilla, OBJ_LIST_LEVEL, false, bhv_mapiskybox_init, bhv_mapiskyboxvanilla_loop)
