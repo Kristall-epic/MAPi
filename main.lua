@@ -1,5 +1,5 @@
---name: Hangout select
---description: let's you warp into custom levels using api
+-- name: MAPi
+-- description: An API that let's you add and warp to custom levels, with easy adding of bgms, skyboxes, env tints
 -- pausable: false
 gLevelValues.fixCollisionBugs = true
 
@@ -28,21 +28,29 @@ mapTable = {
     sound = nil,
     bgm = nil,
     skybox = {nil},
+    envtint = {
+        [1] = {
+          color = {r = 255, g = 255, b = 255},
+        dir = {x = 0, y = 0, z = 0}
+        }
+      },
   },
   [2] = {
     source = LEVEL_CASTLE,
     name = "Castle Main Floor",
     description = {
-      "Princess Peach's castle",
-      "i don't really know what",
-      "to say here =dsjzgwkd:xig",
-      "HELLO THIS IS A VERY LONG DESCRIPTION LINE I THINK IT EVEN GOES BEYOND THE SCREEN WAIT THEN YOU WOULDN'T BE ABLE TO READ THIS",
+      "Princess Peach's castle.",
+      "The main area of the game",
     },
     credit = "Nintendo",
     prev = prevCMF,
     sound = nil,
     bgm = nil,
     skybox = {nil},
+    envtint = {
+        color = {r = 255, g = 255, b = 255},
+        dir = {x = 0, y = 0, z = 0}
+      },
   },
   
 }
@@ -65,15 +73,24 @@ function warp_to_hangout(mapID, actID, warpNode)
       djui_popup_create("This map does not Exist!", 1)
       return true
     end
-    if curBGM ~= nil then
+    if mapTable[tonumber(mapID)].source == nil or nuhuhdontusethatone[mapTable[tonumber(mapID)].source] or (level_is_vanilla_level(mapTable[tonumber(mapID)].source) == false and smlua_level_util_get_info(mapTable[tonumber(mapID)].source) == nil) then
+      djui_popup_create("This map has an invalid levelNum!", 2)
+        else
+  
+         if curBGM ~= nil then
       audio_stream_stop(curBGM)
       curBGM = nil
-    end
-    if nuhuhdontusethatone[mapTable[tonumber(mapID)].source] then
-      djui_popup_create("This map does not Exist!", 1)
-      return true
-        else
+    end 
           warp_to_warpnode(mapTable[tonumber(mapID)].source, 1, actID or 1, warpNode or 0x0A)
+          Menu = false
+if mapTable[mapID].sound ~= nil then
+  snd = mapTable[mapID].sound
+  if type(snd) == "number" then
+    play_sound(snd, gMarioStates[0].pos)
+  else
+    audio_sample_play(mapTable[mapID].sound, gMarioStates[0].pos, 3)
+    end
+    end
         curLevel = tonumber(mapID)
         djui_popup_create_global(gNetworkPlayers[0].name.."\\#dcdcdc\\ entered \\#ffffff\\"..mapTable[mapID].name.."\\#dcdcdc\\, Act \\#ffffff\\#"..tostring(actID), 2)
         end
@@ -109,7 +126,7 @@ hook_event(HOOK_BEFORE_WARP, before_warp)
 local function on_warp()
   
   local l = gLakituState
-    local skyboxcheck = obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskybox)
+    local skyboxcheck = obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskybox) or obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskyboxvanilla)
     local p = gNetworkPlayers[0]
     if skyboxcheck == nil and mapTable[curLevel].skybox ~= {nil} and (_G.MAPi.get_levelnum_from_hangout(curLevel) ~= nil and gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel)) then
       local sky = mapTable[curLevel].skybox
@@ -146,12 +163,20 @@ if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel
     audio_stream_set_looping(mapTable[curLevel].bgm, true)
     curBGM = mapTable[curLevel].bgm
     end
-   -- djui_chat_message_create(tostring(gNetworkPlayers[0].currAreaIndex))
-
+   -- djui_chat_message_create(tostring(gNetworkPlayers[0].currAreaIndex)
 end
+
+if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].envtint[p.currAreaIndex] ~= nil then
+  local env = mapTable[curLevel].envtint[p.currAreaIndex]
+ set_env_tint(env.color, env.dir)
+ else
+   set_env_tint({r = 255, g = 255, b = 255}, {x = 0,y = 0, z = 0})
+end
+
 end
 
 hook_event(HOOK_ON_WARP, on_warp)
+
 
 local function what_maps()
   
@@ -180,9 +205,6 @@ local function mapi_warp_command(msg)
     end
   
   if network_is_server() or gGlobalSyncTable.canWarp == true then
-  if mapTable[map].sound ~= nil then
-    audio_sample_play(mapTable[map].sound, gMarioStates[0].pos, 3)
-  end
   if nuhuhdontusethatone[_G.MAPi.get_levelnum_from_hangout(map)] then
     djui_popup_create("This map does not Exist!", 1)
     return true
@@ -190,6 +212,9 @@ local function mapi_warp_command(msg)
       warp_to_hangout(map, 1, (map == 2 and 0x20 or map == 1 and 0xFF) or 0x0A)
       return true
   end
+  else
+    djui_popup_create("Warping is disabled by host!", 2)
+    return true
   end
   
   
