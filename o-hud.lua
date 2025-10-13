@@ -141,16 +141,7 @@ end
   
 if m.controller.buttonPressed & A_BUTTON ~= 0 then
   if network_is_server() or gGlobalSyncTable.canWarp == true then
-  if nuhuhdontusethatone[_G.MAPi.get_levelnum_from_hangout(LevelIndex)] then
-    djui_popup_create("This map does not Exist!", 1)
-    return
-    else
 warp_to_hangout(LevelIndex, LevelAct, (LevelIndex == 2 and 0x20 or LevelIndex == 1 and 0xFF) or 0x0A)
-if mapTable[LevelIndex].sound ~= nil then
-    audio_sample_play(mapTable[LevelIndex].sound, m.pos, 3)
-    end
-end
-Menu = false
 else
   djui_popup_create("Warping is disabled by host!", 2)
 end
