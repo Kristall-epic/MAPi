@@ -11,10 +11,6 @@ Bgm:The background music that will play, put nil to skip and just have the defau
 ]]
 local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, Sound, Bgm)
   
-  if _G.MAPi.get_hangout_from_levelnum(sourceMap) ~= nil then
-    return djui_popup_create(tostring(Name).. " has the same level num than another hangout!", 2)
-    end
-  
   local mapID = #mapTable + 1
   table.insert(mapTable, {
       source = sourceMap,
@@ -25,6 +21,7 @@ local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, So
       sound = Sound,
       bgm = Bgm,
       skybox = {nil},
+      envtint = {nil},
   }
     )
   return mapID
@@ -45,7 +42,8 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
       prev = Preview ~= nil and Preview or map.prev,
       sound = Sound ~= nil and Sound or map.sound,
       bgm = Bgm ~= nil and Bgm or map.bgm,
-      skybox = mapTable[mapID].skybox
+      skybox = mapTable[mapID].skybox,
+      envtint = mapTable[mapID].envtint
   }
   
   if _G.MAPi.get_cur_hangout() == mapID then
@@ -94,8 +92,30 @@ local function hangout_edit_skybox(mapID, area, Skybox)
    sky.left = Skybox.left or sky.left
    sky.right = Skybox.right or sky.right
    
-   if _G.MAPi.get_cur_hangout() == mapID then
+   if _G.MAPi.get_cur_hangout() == mapID and gNetworkPlayers[0].currAreaIndex == area then
      replace_skybox(mapTable[mapID].skybox, gNetworkPlayers[0])
+     end
+  
+end
+
+--adds an environment tint to the given hangout map
+local function hangout_add_env_tint(mapID, Color, Dir)
+  table.insert(mapTable[mapID].envtint,
+    {color = Color, dir = Dir})
+end
+
+local function hangout_edit_env_tint(mapID, area, Color, Dir)
+  if mapTable[mapID].envtint[area] ~= nil then
+  tint = mapTable[mapID].envtint[area]
+  else
+    return
+  end
+  
+tint.color = Color or tint.color
+tint.dir = Dir or tint.dir
+
+if (gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(mapID)) and gNetworkPlayers[0].currAreaIndex == area then
+     set_env_tint(tint.color, tint.dir)
      end
   
   end
@@ -103,7 +123,7 @@ local function hangout_edit_skybox(mapID, area, Skybox)
 --gets the current or last level with a hangoutID a player was in
 local function get_cur_hangout()
   if gNetworkPlayers[0] then
-    return curLevel
+    return gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and curLevel or false
     end
 end
 
@@ -141,6 +161,8 @@ _G.MAPi = {
   get_hangout_from_levelnum = get_hangout_from_levelnum,
   hangout_add_skybox = hangout_add_skybox,
   hangout_edit_skybox = hangout_edit_skybox,
+  hangout_add_env_tint = hangout_add_env_tint,
+  hangout_edit_env_tint = hangout_edit_env_tint,
   is_menu_open = is_menu_open,
   menu_get_cur_selected = menu_get_cur_selected,
 }
