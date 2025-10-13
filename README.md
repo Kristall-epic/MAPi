@@ -42,6 +42,25 @@ Area | The area index of the skybox you wanna change, normally 1 | 1 \| 2 \| 4
 Skybox | A table with the images, in skytype, specify "box" to use 6 images or "ico" to use only 1 image (the one specified as front) | { skytype = "box", up = skybox_up, down = skybox_dn, front = skybox_ft, back = skybox_bk, left = skybox_lf, right = skybox_rt}
 
 
+### _G.MAPi.hangout_add_env_tint()
+Adds an environment tint to the given hangout MapID
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.hangout_add_env_tint(hangout_coolness)`|
+Color | The color in {r, g, b} for the map | `{r = 255, g = 220, b = 127}`
+Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
+
+
+### _G.MAPi.hangout_edit_env_tint()
+edits the environment tint of the given area of the hangout MapID
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.hangout_add_env_tint(hangout_coolness)`|
+Area | The area index of the environment tint you wanna change, normally 1 | 1 \| 2 \| 4
+Color | The color in {r, g, b} for the map | `{r = 255, g = 220, b = 127}`
+Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
+
+
 ### _G.MAPi.get_cur_hangout()
 Returns the current or last MapID of a hangout you have been in
 
