@@ -47,7 +47,7 @@ end
   djuiheight = djui_hud_get_screen_height()
   halfwidth = djuiwidth * 0.5
   quarterwidth = djuiwidth * 0.25
-  actplayers = check_players_hangout_per_act(LevelIndex)
+  actplayers = _G.MAPi.check_players_hangout_per_act(LevelIndex)
   
   if posX ~= (250 * LevelIndex) then
    posX = lerp(posX, (250 * LevelIndex), 0.2)
