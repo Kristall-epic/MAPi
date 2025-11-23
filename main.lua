@@ -1,5 +1,5 @@
 -- name: MAPi
--- description: An API that let's you add and warp to custom levels, with easy adding of bgms, skyboxes, env tints
+-- description: An API that let's you add and warp to custom levels
 -- pausable: false
 gLevelValues.fixCollisionBugs = true
 
@@ -40,7 +40,7 @@ mapTable = {
     name = "Castle Main Floor",
     description = {
       "Princess Peach's castle.",
-      "The main area of the game",
+      "The main area of the game,",
     },
     credit = "Nintendo",
     prev = prevCMF,
@@ -94,7 +94,6 @@ if mapTable[mapID].sound ~= nil then
         curLevel = tonumber(mapID)
         djui_popup_create_global(gNetworkPlayers[0].name.."\\#dcdcdc\\ entered \\#ffffff\\"..mapTable[mapID].name.."\\#dcdcdc\\, Act \\#ffffff\\#"..tostring(actID), 2)
         end
-       -- djui_chat_message_create(       tostring(mapTable[tonumber(mapID)].source).." "..tostring(mapTable[tonumber(mapID)].name).." "..tostring(mapTable[tonumber(mapID)].credit)  )
         return true
     end
   
@@ -163,7 +162,6 @@ if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel
     audio_stream_set_looping(mapTable[curLevel].bgm, true)
     curBGM = mapTable[curLevel].bgm
     end
-   -- djui_chat_message_create(tostring(gNetworkPlayers[0].currAreaIndex)
 end
 
 if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].envtint[p.currAreaIndex] ~= nil then
@@ -243,8 +241,7 @@ local function toggle_warping(msg)
   end
 
 function packet_receive(data_table)
-    -----@type NetworkPlayer
-    --gNetworkPlayers[0] = gNetworkPlayers[0]
+  
     if data_table.entered_level ~= nil then
     local entered_level = data_table.entered_level
     local entered_act = data_table.entered_act
@@ -262,5 +259,5 @@ if network_is_server() then
   hook_chat_command("mapi-toggle-warps", " [true / false] - Toggles if other players should be able to warp using the MAPi menu", toggle_warping)
   end
 
-hook_chat_command("maps", "- shows currently available maps", what_maps)
+hook_chat_command("mapi-maps", "- shows currently available maps", what_maps)
 hook_chat_command("mapi-warp", "- warps to a map on maptable", mapi_warp_command)
