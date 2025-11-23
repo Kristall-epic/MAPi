@@ -55,7 +55,7 @@ Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
 edits the environment tint of the given area of the hangout MapID
 Param | Description | Example
 ----- | ----------- | --------
-MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.hangout_add_env_tint(hangout_coolness)`|
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.hangout_edit_env_tint(hangout_coolness)`|
 Area | The area index of the environment tint you wanna change, normally 1 | 1 \| 2 \| 4
 Color | The color in {r, g, b} for the map | `{r = 255, g = 220, b = 127}`
 Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
@@ -85,3 +85,28 @@ Returns true if the MAPi Menu is open
 
 ### _G.MAPi.menu_get_cur_selected()
 Returns the selected MapID on the menu
+
+
+### _G.MAPi.check_players_in_hangout()
+Returns the total number of players that are currently in the given mapID
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.check_players_in_hangout(hangout_coolness)`|
+
+
+### _G.MAPi.check_players_hangout_per_act()
+Returns a table with the number of players that are currently in each act of the given mapID
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.check_players_hangout_per_act(hangout_coolness)`|
+
+
+### _G.MAPi.hangout_edit_bgm()
+Changes the background music of the given mapID to Source, if the mapID uses a table for bgm, Area specifies which one in the table gets changed
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `_G.MAPi.hangout_map_add()` \| `_G.MAPi.hangout_edit_bgm(hangout_coolness, 1, my_very_cool_bgm)`|
+Area | The area index of the bgm you want to change, normally 1 | 1 \| 2 \| 4
+Source | The new stream that will be used | `audio_stream_load("Cool BGM")`
+
+
