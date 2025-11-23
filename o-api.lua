@@ -46,17 +46,31 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
       envtint = mapTable[mapID].envtint
   }
   
-  if _G.MAPi.get_cur_hangout() == mapID then
-    if Bgm ~= nil then
+  if _G.MAPi.get_cur_hangout() == mapID and Bgm ~= nil then
+    
     if curBGM ~= nil then
-      audio_stream_stop(curBGM)
-      curBGM = nil
+    audio_stream_stop(curBGM)
     end
+    
+  if type(Bgm) == "table" then
+    stop_background_music(get_current_background_music())
+    
+    for i, bgm in pairs(Bgm) do
+    if i == gNetworkPlayers[0].currAreaIndex then
+    stop_background_music(get_current_background_music())
+    audio_stream_play(bgm, false, 1)
+    audio_stream_set_looping(bgm, true)
+    curBGM = bgm
+    end
+    end
+    
+    else
     audio_stream_play(Bgm, false, 1)
     audio_stream_set_looping(Bgm, true)
     curBGM = Bgm
     end
-    end
+   -- djui_chat_message_create(tostring(gNetworkPlayers[0].currAreaIndex)
+end
 
   return mapID
 end
@@ -118,7 +132,46 @@ if (gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(mapID))
      set_env_tint(tint.color, tint.dir)
      end
   
+end
+
+--Edits the bgm of the given hangout to src, if your map uses a table, use area to specify which are src goes to
+function hangout_edit_bgm(mapID, area, src)
+  
+  if _G.MAPi.get_cur_hangout() ~= mapID then
+    return end
+  
+  if curBGM ~= nil then
+    audio_stream_stop(curBGM)
   end
+  
+  stop_background_music(get_current_background_music())
+  
+  if type(mapTable[mapID].bgm) == "table" then
+   local bgm = mapTable[mapID].bgm
+    
+    bgm[area] = src or bgm[area]
+    
+    for i, mus in pairs(bgm) do
+    if i == gNetworkPlayers[0].currAreaIndex then
+    stop_background_music(get_current_background_music())
+    audio_stream_play(mus, false, 1)
+    audio_stream_set_looping(mus, true)
+    curBGM = mus
+    end
+    end
+    
+    
+    return mapID
+    end
+  
+  mapTable[mapID].bgm = src or mapTable[mapID].bgm
+  
+    audio_stream_play(mapTable[mapID].bgm, false, 1)
+    audio_stream_set_looping(mapTable[mapID].bgm, true)
+    curBGM = mapTable[mapID].bgm
+  
+  end
+
 
 --gets the current or last level with a hangoutID a player was in
 local function get_cur_hangout()
@@ -153,9 +206,46 @@ local function menu_get_cur_selected()
   return LevelIndex
 end
 
+--Return the amount of players in the given hangout
+local function check_players_in_hangout(mapID)
+    local level = mapTable[mapID].source
+    local plr = 0
+
+    for _, player in pairs(gNetworkPlayers) do
+        if player.connected and player.currLevelNum == level then
+            plr = plr + 1
+        end
+    end
+
+    return plr
+end
+
+--Returns a table with the number of players in the 6 acts of the given hangout
+local function check_players_hangout_per_act(mapID)
+  local level = mapTable[mapID].source
+  local plr = {
+    [1] = 0,
+    [2] = 0,
+    [3] = 0,
+    [4] = 0,
+    [5] = 0,
+    [6] = 0,
+  }
+  
+  for _, player in pairs(gNetworkPlayers) do
+        if player.connected and player.currLevelNum == level and player.currActNum > 0 then
+              plr[player.currActNum] = plr[player.currActNum] + 1
+        end
+  end
+  
+  return plr
+  end
+
+
 _G.MAPi = {
   hangout_map_add = hangout_map_add,
   hangout_map_edit = hangout_map_edit,
+  hangout_edit_bgm = hangout_edit_bgm,
   get_cur_hangout = get_cur_hangout,
   get_levelnum_from_hangout = get_levelnum_from_hangout,
   get_hangout_from_levelnum = get_hangout_from_levelnum,
@@ -165,4 +255,6 @@ _G.MAPi = {
   hangout_edit_env_tint = hangout_edit_env_tint,
   is_menu_open = is_menu_open,
   menu_get_cur_selected = menu_get_cur_selected,
+  check_players_in_hangout = check_players_in_hangout,
+  check_players_hangout_per_act = check_players_hangout_per_act
 }
