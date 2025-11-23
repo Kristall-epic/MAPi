@@ -1,37 +1,4 @@
 
-function check_players_in_hangout(mapID)
-    local level = mapTable[mapID].source
-    local plr = 0
-
-    for _, player in pairs(gNetworkPlayers) do
-        if player.connected and player.currLevelNum == level then
-            plr = plr + 1
-        end
-    end
-
-    return plr
-end
-
-function check_players_hangout_per_act(mapID)
-  local level = mapTable[mapID].source
-  local plr = {
-    [1] = 0,
-    [2] = 0,
-    [3] = 0,
-    [4] = 0,
-    [5] = 0,
-    [6] = 0,
-  }
-  
-  for _, player in pairs(gNetworkPlayers) do
-        if player.connected and player.currLevelNum == level and player.currActNum > 0 then
-              plr[player.currActNum] = plr[player.currActNum] + 1
-        end
-  end
-  
-  return plr
-  end
-
 function lerp(a, b, t)
     return a * (1 - t) + b * t
 end
