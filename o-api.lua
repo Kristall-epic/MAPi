@@ -58,8 +58,6 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
     for i, bgm in pairs(Bgm) do
     if i == gNetworkPlayers[0].currAreaIndex then
     stop_background_music(get_current_background_music())
-    audio_stream_play(bgm, false, 1)
-    audio_stream_set_looping(bgm, true)
     curBGM = bgm
     end
     end
@@ -154,8 +152,6 @@ function hangout_edit_bgm(mapID, area, src)
     for i, mus in pairs(bgm) do
     if i == gNetworkPlayers[0].currAreaIndex then
     stop_background_music(get_current_background_music())
-    audio_stream_play(mus, false, 1)
-    audio_stream_set_looping(mus, true)
     curBGM = mus
     end
     end
@@ -165,9 +161,6 @@ function hangout_edit_bgm(mapID, area, src)
     end
   
   mapTable[mapID].bgm = src or mapTable[mapID].bgm
-  
-    audio_stream_play(mapTable[mapID].bgm, false, 1)
-    audio_stream_set_looping(mapTable[mapID].bgm, true)
     curBGM = mapTable[mapID].bgm
   
   end
@@ -243,6 +236,18 @@ local function check_players_hangout_per_act(mapID)
 
 
 _G.MAPi = {
+  controller = {
+    buttonDown = 0,
+    buttonPressed = 0,
+    extStickX = 0,
+    extStickY = 0,
+    rawStickX = 0,
+    rawStickY = 0,
+    stickMag = 0,
+    stickX = 0,
+    stickY = 0
+    
+  },
   hangout_map_add = hangout_map_add,
   hangout_map_edit = hangout_map_edit,
   hangout_edit_bgm = hangout_edit_bgm,
