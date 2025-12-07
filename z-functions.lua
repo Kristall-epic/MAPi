@@ -4,14 +4,14 @@ function replace_skybox(sky, p)
   if sky[p.currAreaIndex] == nil then
     return end
   
-texture_override_set("Custom_Skybox_Icosphere_cloud_floor_rgba16", sky[p.currAreaIndex].front or prevNone)
+texture_override_set("MAPi_Icosphere_mapi_skybox_unk_rgba16", sky[p.currAreaIndex].front or prevNone)
         if sky[p.currAreaIndex].skytype == "box" then
-        texture_override_set("Custom_Skybox_Cube_skyast_up_rgba16", sky[p.currAreaIndex].up or prevNone)
-        texture_override_set("Custom_Skybox_Cube_skyast_lf_rgba16", sky[p.currAreaIndex].left or prevNone)
-        texture_override_set("Custom_Skybox_Cube_skyast_dn_rgba16", sky[p.currAreaIndex].down or prevNone)
-        texture_override_set("Custom_Skybox_Cube_skyast_rt_rgba16", sky[p.currAreaIndex].right or prevNone)
-        texture_override_set("Custom_Skybox_Cube_skyast_bk_rgba16", sky[p.currAreaIndex].back or prevNone)
-       texture_override_set("Custom_Skybox_Cube_skyast_ft_rgba16", sky[p.currAreaIndex].front or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_up_rgba16", sky[p.currAreaIndex].up or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_lf_rgba16", sky[p.currAreaIndex].left or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_dn_rgba16", sky[p.currAreaIndex].down or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_rt_rgba16", sky[p.currAreaIndex].right or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_bk_rgba16", sky[p.currAreaIndex].back or prevNone)
+        texture_override_set("MAPi_Skybox_Cube_skyast_ft_rgba16", sky[p.currAreaIndex].front or prevNone)
         end
         
 end
