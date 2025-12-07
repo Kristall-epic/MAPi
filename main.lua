@@ -131,7 +131,7 @@ hook_event(HOOK_BEFORE_WARP, before_warp)
 local function on_warp()
   
   local l = gLakituState
-    local skyboxcheck = obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskybox) or obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskyboxvanilla)
+    local skyboxcheck = obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskybox)
     local p = gNetworkPlayers[0]
     if skyboxcheck == nil and mapTable[curLevel].skybox ~= {nil} and (MAPi.get_levelnum_from_hangout(curLevel) ~= nil and gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel)) then
       local sky = mapTable[curLevel].skybox
