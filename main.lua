@@ -1,11 +1,15 @@
 -- name: MAPi
 -- description: An API that let's you add and warp to custom levels
 -- pausable: false
-gLevelValues.fixCollisionBugs = true
 
 curBGM = nil
+curVolume = 1
+VOLUME_PAUSE = 0.35
+VOLUME_DEFAULT = 1
+VOLUME_MUTE = 0
 curLevel = 1
 gGlobalSyncTable.canWarp = true
+gGlobalSyncTable.warpPopups = true
 
 local prevCG = get_texture_info("prev_cg")
 local prevCMF = get_texture_info("prev_cmf")
@@ -92,7 +96,9 @@ if mapTable[mapID].sound ~= nil then
     end
     end
         curLevel = tonumber(mapID)
+        if gGlobalSyncTable.warpPopups == true then
         djui_popup_create_global(gNetworkPlayers[0].name.."\\#dcdcdc\\ entered \\#ffffff\\"..mapTable[mapID].name.."\\#dcdcdc\\, Act \\#ffffff\\#"..tostring(actID), 2)
+        end
         end
         return true
     end
@@ -127,7 +133,7 @@ local function on_warp()
   local l = gLakituState
     local skyboxcheck = obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskybox) or obj_get_nearest_object_with_behavior_id(o, id_bhvmapiskyboxvanilla)
     local p = gNetworkPlayers[0]
-    if skyboxcheck == nil and mapTable[curLevel].skybox ~= {nil} and (_G.MAPi.get_levelnum_from_hangout(curLevel) ~= nil and gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel)) then
+    if skyboxcheck == nil and mapTable[curLevel].skybox ~= {nil} and (MAPi.get_levelnum_from_hangout(curLevel) ~= nil and gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel)) then
       local sky = mapTable[curLevel].skybox
       if sky[p.currAreaIndex] ~= nil then
       if sky[p.currAreaIndex].skytype == "ico" then
@@ -143,13 +149,11 @@ local function on_warp()
     audio_stream_stop(curBGM)
     end
   
-if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].bgm ~= nil then
+if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].bgm ~= nil then
   if type(mapTable[curLevel].bgm) == "table" then
     for i, bgm in pairs(mapTable[curLevel].bgm) do
     if i == gNetworkPlayers[0].currAreaIndex then
     stop_background_music(get_current_background_music())
-    audio_stream_play(bgm, false, 1)
-    audio_stream_set_looping(bgm, true)
     curBGM = bgm
     end
     end
@@ -158,13 +162,11 @@ if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel
       if curBGM ~= nil then
     audio_stream_stop(curBGM)
     end
-    audio_stream_play(mapTable[curLevel].bgm, false, 1)
-    audio_stream_set_looping(mapTable[curLevel].bgm, true)
     curBGM = mapTable[curLevel].bgm
     end
 end
 
-if gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].envtint[p.currAreaIndex] ~= nil then
+if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].envtint[p.currAreaIndex] ~= nil then
   local env = mapTable[curLevel].envtint[p.currAreaIndex]
  set_env_tint(env.color, env.dir)
  else
@@ -174,6 +176,35 @@ end
 end
 
 hook_event(HOOK_ON_WARP, on_warp)
+
+function play_custom_bgm(m)
+  if m.playerIndex ~= 0 then
+    return end
+  
+  if curBGM ~= nil then
+  audio_stream_play(curBGM, false, curVolume)
+  audio_stream_set_looping(curBGM, true)
+  
+  if m.numLives < 0 then
+    audio_stream_stop(curBGM)
+    curBGM = nil
+    end
+  
+  end
+  
+  if m.flags & MARIO_WING_CAP ~= 0 or m.flags & MARIO_VANISH_CAP ~= 0 or m.flags & MARIO_METAL_CAP ~= 0 or m.action & ACT_FLAG_RIDING_SHELL ~= 0 then
+   curVolume = VOLUME_MUTE
+    else 
+      if is_game_paused() == true or MAPi.is_menu_open() == true then
+        curVolume = VOLUME_PAUSE
+        else
+      curVolume = VOLUME_DEFAULT
+      end
+  end
+  
+end
+
+hook_event(HOOK_MARIO_UPDATE, play_custom_bgm)
 
 
 local function what_maps()
@@ -194,19 +225,29 @@ local function tp_everyone_level()
 end
 
 local function mapi_warp_command(msg) 
-  local map = tonumber(msg) or 1
+  local map = tonumber(msg) or 0
+  
   if gNetworkPlayers[0] then
+    
+    if map == 0 then
+    debounce = 15
+    Menu = true
+    game_unpause()
+    return true
+    end
+    
     if mapTable[map] == nil then
       djui_popup_create("This map does not Exist!", 1)
-      return false
+      return true
     end
     end
   
   if network_is_server() or gGlobalSyncTable.canWarp == true then
-  if nuhuhdontusethatone[_G.MAPi.get_levelnum_from_hangout(map)] then
+  if nuhuhdontusethatone[MAPi.get_levelnum_from_hangout(map)] then
     djui_popup_create("This map does not Exist!", 1)
     return true
     else
+      play_transition(WARP_TRANSITION_FADE_FROM_BOWSER, 30, 0, 0, 0)
       warp_to_hangout(map, 1, (map == 2 and 0x20 or map == 1 and 0xFF) or 0x0A)
       return true
   end
@@ -218,7 +259,8 @@ local function mapi_warp_command(msg)
   
   end
 
-local function toggle_warping(msg)
+function toggle_warping(ms)
+  msg = tostring(ms)
   
   if msg == "true" then
     gGlobalSyncTable.canWarp = true
@@ -238,7 +280,32 @@ local function toggle_warping(msg)
       return true
   end
   
+end
+
+
+function toggle_popups(ms)
+  msg = tostring(ms)
+  
+  if msg == "true" then
+    gGlobalSyncTable.warpPopups = true
+    djui_popup_create_global("MAPi popups have been activated.", 2)
+    return true
+  elseif msg == "false" then
+    gGlobalSyncTable.warpPopups = false
+    djui_popup_create_global("MAPi popups have been deactivated.", 2)
+    return true
+    else
+      gGlobalSyncTable.warpPopups = not gGlobalSyncTable.warpPopups
+      if gGlobalSyncTable.warpPopups == true then
+    djui_popup_create_global("MAPi popups have been activated.", 2)
+    else
+      djui_popup_create_global("MAPi popups have been deactivated.", 2)
+      end
+      return true
   end
+  
+  end
+
 
 function packet_receive(data_table)
   
@@ -255,9 +322,9 @@ end
 hook_event(HOOK_ON_PACKET_RECEIVE, packet_receive)
 
 if network_is_server() then
-  hook_chat_command("mapi-warp-all", "- Warps everyone to your current level", tp_everyone_level)
+  hook_chat_command("mapi-warp-all", "- Warps everyone to your current hangout", tp_everyone_level)
   hook_chat_command("mapi-toggle-warps", " [true / false] - Toggles if other players should be able to warp using the MAPi menu", toggle_warping)
   end
 
-hook_chat_command("mapi-maps", "- shows currently available maps", what_maps)
-hook_chat_command("mapi-warp", "- warps to a map on maptable", mapi_warp_command)
+hook_chat_command("mapi-maps", "- shows currently available maps from MAPi", what_maps)
+hook_chat_command("mapi-warp", "- warps to a currently available hangout map on MAPi or opens the menu", mapi_warp_command)
