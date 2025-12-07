@@ -1,7 +1,4 @@
-
-function lerp(a, b, t)
-    return a * (1 - t) + b * t
-end
+lerp = math.lerp
 
 function replace_skybox(sky, p)
   if sky[p.currAreaIndex] == nil then
@@ -38,4 +35,29 @@ function set_env_tint(color, lightingDir)
     set_lighting_dir(0, lightingDir.x)
     set_lighting_dir(1, lightingDir.y)
     set_lighting_dir(2, lightingDir.z)
+end
+
+--from CS by Squishy
+function nullify_inputs(m)
+    local c = m.controller
+    _G.MAPi.controller = {
+        buttonDown = c.buttonDown,
+        buttonPressed = c.buttonPressed & ~_G.MAPi.controller.buttonDown,
+        extStickX = c.extStickX,
+        extStickY = c.extStickY,
+        rawStickX = c.rawStickX,
+        rawStickY = c.rawStickY,
+        stickMag = c.stickMag,
+        stickX = c.stickX,
+        stickY = c.stickY
+    }
+    c.buttonDown = 0
+    c.buttonPressed = 0
+    c.extStickX = 0
+    c.extStickY = 0
+    c.rawStickX = 0
+    c.rawStickY = 0
+    c.stickMag = 0
+    c.stickX = 0
+    c.stickY = 0
 end
