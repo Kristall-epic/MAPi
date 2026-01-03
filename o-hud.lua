@@ -2,19 +2,20 @@ LevelIndex = 2
 Menu = false
 settings = false
 curSetting = 1
-SETTING_LTRIG = true
+SETTING_LTRIG = mod_storage_load_bool("LTRIG")
 
 mapiSettings = {
   
   [1] = {
     val = SETTING_LTRIG,
-    name = "L trigger",
+    name = "Start + L",
     desc = {"Start + L to open MAPi", "or only command"},
-    visTrue = "Use L Trigger.",
+    visTrue = "Use for MAPi",
     visFalse = "Command only.",
     host = false,
     func = function() 
       SETTING_LTRIG = not SETTING_LTRIG
+      mod_storage_save_bool("LTRIG", SETTING_LTRIG)
       end
   },
   
@@ -40,7 +41,16 @@ mapiSettings = {
   
 }
 
+local menuTextColor = {
+  r = 255,
+  g = 255,
+  b = 255,
+  a = 255
+}
+
 local MAX_TILT = 0x600
+local selectedTilt = 0x0
+local intendedSelectedTilt = MAX_TILT
 local fadeout = 0
 local LevelAct = 1
 local posX = 0
@@ -181,7 +191,7 @@ hook_event(HOOK_BEFORE_MARIO_UPDATE, mario_update)
 
 local function on_hud_render(m)
   
-  if is_game_paused() and djui_hud_is_pause_menu_created() == false then
+  if is_game_paused() and djui_hud_is_pause_menu_created() == false and SETTING_LTRIG == true then
     djui_hud_set_font(djui_menu_get_font())
 djui_hud_print_text("L Button - MAPi Menu", 20, 16, 1)
 end
@@ -206,6 +216,12 @@ end
   
   picRot = lerp(picRot, PIC_INTENDED_ROT, 0.2)
   
+  selectedTilt = lerp(selectedTilt, intendedSelectedTilt, 0.05)
+  
+  if math.abs(selectedTilt - intendedSelectedTilt) < 0x300 then
+    intendedSelectedTilt = -intendedSelectedTilt
+    end
+  
   settingsPos = lerp(settingsPos, settings == true and SETTINGS_POS_SHOW or SETTINGS_POS_HIDDEN, 0.2)
   
   if Menu == true then
@@ -220,6 +236,15 @@ if Menu == true then
   djui_hud_render_rect(-20, -20, djuiwidth + 40, djuiheight + 20)
   djui_hud_set_color(255, 255, 255, 225*fadeout)
   
+  if mapTable[LevelIndex].textColor ~= nil and type(mapTable[LevelIndex].textColor) == "table" then
+    mapTextColor = mapTable[LevelIndex].textColor
+    
+    approach_color_to_color(menuTextColor, mapTextColor)
+    else
+      approach_color_to_color(menuTextColor, {r = 255, g = 255, b = 255, a = 255})
+    end
+ 
+ --Small photos 
 for i, map in pairs(mapTable) do
   djui_hud_set_font(FONT_ALIASED)
   local players = MAPi.check_players_in_hangout(i)
@@ -229,6 +254,10 @@ for i, map in pairs(mapTable) do
   local diff = math.abs(i - LevelIndex)
   local intendedY = (10/(diff+1))
   
+  if diff == 0 then
+    djui_hud_set_rotation(selectedTilt, 0.5, 0.5)
+    end
+ 
   djui_hud_render_rect( (((65 * i) - posX) + halfwidth - 20) - 2, djuiheight - 40 - 2 - intendedY, 256*0.2 + 4, 128*0.2 + 8)
   
   djui_hud_render_texture(preview ~= nil and preview or prevNone, ((65 * i) - posX) + halfwidth - 20, djuiheight - 40 - intendedY, previewScaleX*0.2, previewScaleY*0.2)
@@ -236,40 +265,49 @@ for i, map in pairs(mapTable) do
   
   djui_hud_print_text(players ~= 0 and tostring(players) or "", ((65 * i) - posX) + halfwidth, djuiheight - 65 - intendedY, 0.5)
   
+  djui_hud_set_rotation(0x0, 0, 0)
+  
 end
 
+local UPPER_OFFSET = djuiheight/8
+local LEFT_OFFSET = 12
+
+--Preview photo
 djui_hud_set_rotation(picRot, 0.5, 0.5)
-djui_hud_render_rect(12, 10, (halfwidth)*0.8 + 8, halfheight*0.8 + 24)
+djui_hud_render_rect(LEFT_OFFSET, UPPER_OFFSET, (halfwidth)*0.8 + 8, halfheight*0.8 + 24)
 
 djui_hud_set_rotation(picRot, 0.5, 0.6)
-djui_hud_render_texture(curMap.prev ~= nil and curMap.prev or prevNone, 16, 16, prevScaleX*0.8, prevScaleY*0.8)
+djui_hud_render_texture(curMap.prev ~= nil and curMap.prev or prevNone, LEFT_OFFSET + 4, UPPER_OFFSET + 6, prevScaleX*0.8, prevScaleY*0.8)
 
 djui_hud_set_rotation(0, 0.5, 0.5)
 
 djui_hud_set_font(FONT_RECOLOR_HUD)
+djui_hud_set_color(menuTextColor.r, menuTextColor.g, menuTextColor.b, menuTextColor.a)
 
-local nameScale = halfwidth/djui_hud_measure_text(mapTable[LevelIndex].name)*0.75
+local nameScale = (halfwidth/djui_hud_measure_text(mapTable[LevelIndex].name))*0.75
 
 local intendedScale = nameScale < 1.35 and nameScale or 1.35
 
 scale = lerp(scale, intendedScale, 0.2)
 
-djui_hud_print_text(mapTable[LevelIndex].name, halfwidth + 8, 16, scale)
+djui_hud_print_text(mapTable[LevelIndex].name, halfwidth + 8, UPPER_OFFSET, scale)
+
+djui_hud_set_color(255, 255, 255, 255)
 
 djui_hud_set_font(FONT_ALIASED)
 
 
-djui_hud_print_text("By: "..tostring(mapTable[LevelIndex].credit), halfwidth + 8, 28 + 10*scale, 0.5)
+djui_hud_print_text("By: "..tostring(mapTable[LevelIndex].credit), halfwidth + 8, 28 + UPPER_OFFSET*scale - 10, 0.5)
 
-djui_hud_render_texture(actselect, halfwidth + 8 + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2 + 20, 28 + 10*scale, 1, 1)
-  djui_hud_render_texture(selectedact, halfwidth + 8 + 11*LevelAct + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2 + 5, 34 + 10*scale, 0.5, 0.5)
+djui_hud_render_texture(actselect, halfwidth + 8 + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2 + 20, 28 + UPPER_OFFSET*scale - 10, 1, 1)
+  djui_hud_render_texture(selectedact, halfwidth + 8 + 11*LevelAct + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2 + 5, 34 + UPPER_OFFSET*scale - 10, 0.5, 0.5)
   
   for i, num in pairs(actplayers) do
-  djui_hud_print_text(num > 0 and tostring(num) or "", (10*i) + halfwidth + 16 + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2, 34 + 10*scale, 0.4)
+  djui_hud_print_text(num > 0 and tostring(num) or "", (11*i) + halfwidth + 18 + djui_hud_measure_text(tostring(mapTable[LevelIndex].credit))/2, 20 + UPPER_OFFSET*scale, 0.4)
   end
   
   for i, line in pairs(mapTable[LevelIndex].description) do
-    djui_hud_print_text(line, halfwidth + 10, (10*i) + 44 + 10*scale, 0.4)
+    djui_hud_print_text(line, halfwidth + 10, (10*i) + 32 + UPPER_OFFSET*scale, 0.4)
     end
 
     local curSett = mapiSettings[curSetting]
@@ -286,21 +324,15 @@ djui_hud_render_texture(actselect, halfwidth + 8 + djui_hud_measure_text(tostrin
         djui_hud_set_color(0,0,0,255)
       end
     end
-    djui_hud_print_text(set.name, settingsPos + 8, halfheight - 14 + 14*i, 0.45)
+    djui_hud_print_text(set.name, settingsPos + 24, halfheight - 10 + 14*i, 0.45)
     end
      djui_hud_set_color(0,0,0,255)
 
-    djui_hud_print_text(visValue, settingsPos, halfheight - 14, 0.45)
-
-  for i, v in pairs(curSett.desc) do
-    local lineLength = djui_hud_measure_text(v)
-
-    djui_hud_print_text(v, settingsPos - 92, halfheight - 8 + 14*i, 0.45)
-    end
+    djui_hud_print_text(visValue, settingsPos + 16, halfheight - 14, 0.50)
 
   djui_hud_set_color(255, 255, 255, 255)
   
-  djui_hud_render_texture(hudcursor, settingsPos + 2, halfheight - 14 + 14*curSetting, 0.5, 0.5)
+  djui_hud_render_texture(hudcursor, settingsPos + 2, halfheight - 10 + 14*curSetting, 0.5, 0.5)
 
 end
 end
