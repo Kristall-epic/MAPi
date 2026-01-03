@@ -6,10 +6,9 @@ Description:{"a short description of your",
 "hangout map, should look",
   "something like this"}
 Preview:The image that will appear in the menu representing your level
-Sound:An optional short sound that will play when the player warps into the level, put nil to skip
 Bgm:The background music that will play, put nil to skip and just have the default bgm you chose in blender play, use a table to set music for multiple areas within the level
 ]]
-local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, Sound, Bgm)
+local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, Bgm)
   
   local mapID = #mapTable + 1
   table.insert(mapTable, {
@@ -18,15 +17,15 @@ local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, So
       description = type(Description) == "table" and Description or {"No description provided."},
       credit = type(Credit) == "string" and Credit or "???",
       prev = Preview ~= nil and Preview or prevNone,
-      sound = Sound,
+      entrysnd = nil,
       bgm = Bgm,
       skybox = {nil},
       envtint = {nil},
+      textColor = {r = 255, g = 255, b = 255, a = 255}
   }
     )
   return mapID
 end
-
 
 --edits the properties of the given hangout id
 local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Preview, Sound, Bgm)
@@ -40,7 +39,7 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
       description = Description ~= nil and Description or map.description,
       credit = Credit ~= nil and Credit or map.credit,
       prev = Preview ~= nil and Preview or map.prev,
-      sound = Sound ~= nil and Sound or map.sound,
+      entrysnd = Sound ~= nil and Sound or map.entrysnd,
       bgm = Bgm ~= nil and Bgm or map.bgm,
       skybox = mapTable[mapID].skybox,
       envtint = mapTable[mapID].envtint
@@ -166,10 +165,10 @@ function hangout_edit_bgm(mapID, area, src)
   end
 
 
---gets the current or last level with a hangoutID a player was in
+--gets the current mapID of the level the player is in, if the current level is not in MAPi, returns nil
 local function get_cur_hangout()
   if gNetworkPlayers[0] then
-    return gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and curLevel or false
+    return gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and curLevel or nil
     end
 end
 
@@ -232,8 +231,28 @@ local function check_players_hangout_per_act(mapID)
   end
   
   return plr
+end
+
+local function hangout_add_entry_sound(mapID, sound)
+if mapTable[mapID] ~= nil then
+  mapTable[mapID].entrysnd = sound
   end
 
+end
+
+local function hangout_edit_text_color(mapID, color)
+  
+  for i, col in pairs(color) do
+    if col > 255 then
+      color[i] = 255
+    end
+    if col < 0 then
+      color[i] = 0
+      end
+    end
+  
+  mapTable[mapID].textColor = color
+  end
 
 _G.MAPi = {
   controller = {
@@ -261,5 +280,7 @@ _G.MAPi = {
   is_menu_open = is_menu_open,
   menu_get_cur_selected = menu_get_cur_selected,
   check_players_in_hangout = check_players_in_hangout,
-  check_players_hangout_per_act = check_players_hangout_per_act
+  check_players_hangout_per_act = check_players_hangout_per_act,
+  hangout_add_entry_sound = hangout_add_entry_sound,
+  hangout_edit_text_color = hangout_edit_text_color
 }
