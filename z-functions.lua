@@ -15,6 +15,16 @@ texture_override_set("MAPi_Icosphere_mapi_skybox_unk_rgba16", sky[p.currAreaInde
         end
         
 end
+
+function approach_color_to_color(color1, color2)
+
+  color1.r = approach_s16_asymptotic(color1.r, color2.r or 255, 4)
+    color1.g = approach_s16_asymptotic(color1.g, color2.g or 255, 4)
+    color1.b = approach_s16_asymptotic(
+      color1.b, color2.b or 255, 4)
+    color1.a = approach_s16_asymptotic(color1.a, color2.a or 255, 4)
+  
+  end
   
   
   --from environment tint by agent x 
