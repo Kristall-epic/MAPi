@@ -29,7 +29,7 @@ mapTable = {
     },
     credit = "Nintendo",
     prev = prevCG,
-    sound = nil,
+    entrysnd = SOUND_MENU_MARIO_CASTLE_WARP2,
     bgm = nil,
     skybox = {nil},
     envtint = {
@@ -38,6 +38,7 @@ mapTable = {
         dir = {x = 0, y = 0, z = 0}
         }
       },
+    textColor = {r = 255, g = 255, b = 255}
   },
   [2] = {
     source = LEVEL_CASTLE,
@@ -48,13 +49,14 @@ mapTable = {
     },
     credit = "Nintendo",
     prev = prevCMF,
-    sound = nil,
+    entrysnd = SOUND_MENU_MARIO_CASTLE_WARP,
     bgm = nil,
     skybox = {nil},
     envtint = {
         color = {r = 255, g = 255, b = 255},
         dir = {x = 0, y = 0, z = 0}
       },
+    textColor = {r = 0xff, g = 0xff, b = 0xff}
   },
   
 }
@@ -87,17 +89,11 @@ function warp_to_hangout(mapID, actID, warpNode)
     end 
           warp_to_warpnode(mapTable[tonumber(mapID)].source, 1, actID or 1, warpNode or 0x0A)
           Menu = false
-if mapTable[mapID].sound ~= nil then
-  snd = mapTable[mapID].sound
-  if type(snd) == "number" then
-    play_sound(snd, gMarioStates[0].pos)
-  else
-    audio_sample_play(mapTable[mapID].sound, gMarioStates[0].pos, 3)
-    end
-    end
+
         curLevel = tonumber(mapID)
         if gGlobalSyncTable.warpPopups == true then
-        djui_popup_create_global(gNetworkPlayers[0].name.."\\#dcdcdc\\ entered \\#ffffff\\"..mapTable[mapID].name.."\\#dcdcdc\\, Act \\#ffffff\\#"..tostring(actID), 2)
+          local plrCol = network_get_player_text_color_string(0)
+        djui_popup_create_global(plrCol..gNetworkPlayers[0].name.."\\#dcdcdc\\ entered \\#ffffff\\"..mapTable[mapID].name.."\\#dcdcdc\\, Act \\#ffffff\\#"..tostring(actID), 2)
         end
         end
         return true
@@ -115,6 +111,28 @@ end
 end
 
 hook_event(HOOK_ON_SEQ_LOAD, custom_hangout_bgm)
+
+
+local function play_init_sound()
+  local mapID = MAPi.get_cur_hangout()
+
+if mapID == nil then
+  return end
+
+if mapTable[mapID].entrysnd ~= nil then
+  snd = mapTable[mapID].entrysnd
+  if type(snd) == "number" then
+    play_sound(snd, gMarioStates[0].pos)
+  else
+    if snd.isStream == false then
+    audio_sample_play(mapTable[mapID].entrysnd, gMarioStates[0].pos, 3)
+    end
+    end
+end
+
+end
+
+hook_event(HOOK_ON_LEVEL_INIT, play_init_sound)
 
 local function before_warp()
   
@@ -154,7 +172,7 @@ if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) a
     for i, bgm in pairs(mapTable[curLevel].bgm) do
     if i == gNetworkPlayers[0].currAreaIndex then
     stop_background_music(get_current_background_music())
-    curBGM = bgm
+    curBGM = bgm.isStream == true and bgm or nil
     end
     end
     else
@@ -162,7 +180,7 @@ if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) a
       if curBGM ~= nil then
     audio_stream_stop(curBGM)
     end
-    curBGM = mapTable[curLevel].bgm
+    curBGM = mapTable[curLevel].bgm.isStream == true and mapTable[curLevel].bgm or nil
     end
 end
 
@@ -320,6 +338,17 @@ function packet_receive(data_table)
 
 end
 hook_event(HOOK_ON_PACKET_RECEIVE, packet_receive)
+
+local function on_mods_load()
+  local hangouts = #mapTable
+  local TEXT_BIND = SETTING_LTRIG == true and " use Start + L or \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu" or " use \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu"
+  local string = "Mapi currently has \\#00ff00\\".. tostring(hangouts).. "\\#dcdcdc\\ maps available! ".. TEXT_BIND
+  
+  djui_popup_create(string, 3)
+  
+end
+
+hook_event(HOOK_ON_MODS_LOADED, on_mods_load)
 
 if network_is_server() then
   hook_chat_command("mapi-warp-all", "- Warps everyone to your current hangout", tp_everyone_level)
