@@ -71,3 +71,10 @@ function nullify_inputs(m)
     c.stickX = 0
     c.stickY = 0
 end
+
+function open_mapi_menu()
+  debounce = 15
+  game_unpause()
+  Menu = true
+  RANDOM_TOP_TEXT = math.random(1, #random_text)
+  end
