@@ -2,7 +2,8 @@ LevelIndex = 2
 Menu = false
 settings = false
 curSetting = 1
-SETTING_LTRIG = mod_storage_load_bool("LTRIG")
+MOD_STORAGE_LTRIG_EXISTS = mod_storage_exists("LTRIG")
+SETTING_LTRIG = (MOD_STORAGE_LTRIG_EXISTS == true) and mod_storage_load_bool("LTRIG") or true
 
 mapiSettings = {
   
@@ -48,7 +49,19 @@ local menuTextColor = {
   a = 255
 }
 
+random_text = {
+  
+  [1] = "Map? API? MAPi!",
+  [2] = "Enjoy your stay!",
+  [3] = "Thanks for using MAPi!",
+  [4] = "Who even takes those pictures?",
+  [5] = "_G.MAPi.hangout_map_add()!",
+  [6] = "Travel the world!"
+  
+}
+
 local MAX_TILT = 0x600
+RANDOM_TOP_TEXT = 1
 local selectedTilt = 0x0
 local intendedSelectedTilt = MAX_TILT
 local fadeout = 0
@@ -59,12 +72,15 @@ local debounce = 0
 local PIC_INTENDED_ROT = math.random(-MAX_TILT, MAX_TILT)
 local picRot = 0
 local settingsPos = 0
+local PREV_SELECTED = 2
+local PREV_SELECTED_OPACITY = 255
 
 prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
 local actselect = get_texture_info("hud_actselect")
 local selectedact = get_texture_info("hud_selectedact")
 local hudcursor = get_texture_info("hud_cursor")
+local mapilogo = get_texture_info("logo_mapi")
 
 local function mario_update(m)
  
@@ -73,9 +89,7 @@ local function mario_update(m)
 if is_game_paused() and djui_hud_is_pause_menu_created() == false then
 
 if SETTING_LTRIG == true and m.controller.buttonPressed & L_TRIG ~= 0 and debounce == 0 then
-  debounce = 15
-  game_unpause()
-  Menu = true
+  open_mapi_menu()
 end
 end
 
@@ -151,6 +165,8 @@ end
   
   if (MAPi.controller.rawStickX > 50 or MAPi.controller.buttonDown & R_JPAD ~= 0) and debounce == 0 then
   debounce = 5
+  PREV_SELECTED = LevelIndex
+  PREV_SELECTED_OPACITY = 255
   LevelIndex = LevelIndex + 1
   if LevelIndex == #mapTable + 1 then
     LevelIndex = 1
@@ -159,6 +175,8 @@ end
   PIC_INTENDED_ROT = math.random(-MAX_TILT, MAX_TILT)
 elseif (MAPi.controller.rawStickX < -50 or MAPi.controller.buttonDown & L_JPAD ~= 0) and debounce == 0 then
   debounce = 5
+  PREV_SELECTED = LevelIndex
+  PREV_SELECTED_OPACITY = 255
  LevelIndex = LevelIndex - 1
   if LevelIndex == 0 then
     LevelIndex = #mapTable
@@ -167,13 +185,13 @@ elseif (MAPi.controller.rawStickX < -50 or MAPi.controller.buttonDown & L_JPAD ~
   PIC_INTENDED_ROT = math.random(-MAX_TILT, MAX_TILT)
 end
   
-  if (MAPi.controller.buttonPressed & L_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & L_TRIG ~= 0) then
+  if (MAPi.controller.buttonPressed & L_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & D_JPAD ~= 0) then
 LevelAct = LevelAct - 1
 if LevelAct < 1 then
   LevelAct = 6
 end
 play_sound(SOUND_MENU_PINCH_MARIO_FACE, m.marioObj.header.gfx.cameraToObject)
-elseif (MAPi.controller.buttonPressed & R_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & R_TRIG ~= 0) then
+elseif (MAPi.controller.buttonPressed & R_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & U_JPAD ~= 0) then
 LevelAct = LevelAct + 1
 if LevelAct > 6 then
   LevelAct = 1
@@ -190,10 +208,11 @@ end
 hook_event(HOOK_BEFORE_MARIO_UPDATE, mario_update)
 
 local function on_hud_render(m)
+  local BIND = SETTING_LTRIG == true and "L Button" or "/mapi-warp"
   
-  if is_game_paused() and djui_hud_is_pause_menu_created() == false and SETTING_LTRIG == true then
+  if is_game_paused() and djui_hud_is_pause_menu_created() == false then
     djui_hud_set_font(djui_menu_get_font())
-djui_hud_print_text("L Button - MAPi Menu", 20, 16, 1)
+djui_hud_print_text(BIND.." - MAPi Menu", 20, 16, 1)
 end
   
   djui_hud_set_resolution(RESOLUTION_N64)
@@ -209,6 +228,9 @@ end
   curMap = mapTable[LevelIndex]
   prevScaleY = (halfheight/curMap.prev.height)
   prevScaleX = (halfwidth/curMap.prev.width)
+  lastPrevScaleY = (halfheight/mapTable[PREV_SELECTED].prev.height)
+  lastPrevScaleX = (halfwidth/mapTable[PREV_SELECTED].prev.width)
+  
   
   if posX ~= (65 * LevelIndex) then
    posX = lerp(posX, (65 * LevelIndex), 0.15)
@@ -218,6 +240,8 @@ end
   
   selectedTilt = lerp(selectedTilt, intendedSelectedTilt, 0.05)
   
+  PREV_SELECTED_OPACITY = lerp(PREV_SELECTED_OPACITY, 0, 0.3)
+  
   if math.abs(selectedTilt - intendedSelectedTilt) < 0x300 then
     intendedSelectedTilt = -intendedSelectedTilt
     end
@@ -225,7 +249,7 @@ end
   settingsPos = lerp(settingsPos, settings == true and SETTINGS_POS_SHOW or SETTINGS_POS_HIDDEN, 0.2)
   
   if Menu == true then
-    fadeout = lerp(fadeout, 1.1, 0.3)
+    fadeout = lerp(fadeout, 1, 0.3)
     else
     fadeout = lerp(fadeout, 0, 0.3)
   end
@@ -256,12 +280,22 @@ for i, map in pairs(mapTable) do
   
   if diff == 0 then
     djui_hud_set_rotation(selectedTilt, 0.5, 0.5)
-    end
+    
+  djui_hud_set_color(menuTextColor.r, menuTextColor.g, menuTextColor.b, menuTextColor.a*fadeout)
+  
+  djui_hud_render_rect( (((65 * i) - posX) + halfwidth - 20) - 3, djuiheight - 40 - 3 - intendedY, 256*0.2 + 6, 128*0.2 + 10)
+  
+  djui_hud_set_color(255, 255, 255, 255*fadeout)
+    
+  end
  
   djui_hud_render_rect( (((65 * i) - posX) + halfwidth - 20) - 2, djuiheight - 40 - 2 - intendedY, 256*0.2 + 4, 128*0.2 + 8)
   
   djui_hud_render_texture(preview ~= nil and preview or prevNone, ((65 * i) - posX) + halfwidth - 20, djuiheight - 40 - intendedY, previewScaleX*0.2, previewScaleY*0.2)
   
+  if (players ~= 0) then
+  djui_hud_render_texture(playerhud, ((65 * i) - posX) + halfwidth - (playerhud.width*0.5), djuiheight - 65 - intendedY, 0.5, 0.5)
+  end
   
   djui_hud_print_text(players ~= 0 and tostring(players) or "", ((65 * i) - posX) + halfwidth, djuiheight - 65 - intendedY, 0.5)
   
@@ -279,10 +313,20 @@ djui_hud_render_rect(LEFT_OFFSET, UPPER_OFFSET, (halfwidth)*0.8 + 8, halfheight*
 djui_hud_set_rotation(picRot, 0.5, 0.6)
 djui_hud_render_texture(curMap.prev ~= nil and curMap.prev or prevNone, LEFT_OFFSET + 4, UPPER_OFFSET + 6, prevScaleX*0.8, prevScaleY*0.8)
 
+djui_hud_set_color(255,255,255,PREV_SELECTED_OPACITY*fadeout)
+
+djui_hud_render_texture(mapTable[PREV_SELECTED].prev ~= nil and mapTable[PREV_SELECTED].prev or prevNone, LEFT_OFFSET + 4, UPPER_OFFSET + 6, lastPrevScaleX*0.8, lastPrevScaleY*0.8)
+
+djui_hud_set_color(255,255,255,255*fadeout)
+
 djui_hud_set_rotation(0, 0.5, 0.5)
 
+djui_hud_render_texture(mapilogo, -2, 4, 0.35, 0.35)
+
+djui_hud_print_text(random_text[RANDOM_TOP_TEXT], mapilogo.width*0.35 - 2, (mapilogo.height*0.35)/4, 0.35)
+
 djui_hud_set_font(FONT_RECOLOR_HUD)
-djui_hud_set_color(menuTextColor.r, menuTextColor.g, menuTextColor.b, menuTextColor.a)
+djui_hud_set_color(menuTextColor.r, menuTextColor.g, menuTextColor.b, menuTextColor.a*fadeout)
 
 local nameScale = (halfwidth/djui_hud_measure_text(mapTable[LevelIndex].name))*0.75
 
@@ -292,7 +336,7 @@ scale = lerp(scale, intendedScale, 0.2)
 
 djui_hud_print_text(mapTable[LevelIndex].name, halfwidth + 8, UPPER_OFFSET, scale)
 
-djui_hud_set_color(255, 255, 255, 255)
+djui_hud_set_color(255, 255, 255, 255*fadeout)
 
 djui_hud_set_font(FONT_ALIASED)
 
@@ -315,22 +359,22 @@ djui_hud_render_texture(actselect, halfwidth + 8 + djui_hud_measure_text(tostrin
   
   djui_hud_render_rect(settingsPos, halfheight - 16, settingsPos + 8, halfheight + 16)
   
-  djui_hud_set_color(0, 0, 0, 255)
+  djui_hud_set_color(0, 0, 0, 255*fadeout)
   for i, set in pairs(mapiSettings) do
     if set.host == true then
       if network_is_server() == false then
-        djui_hud_set_color(127, 127, 127, 255)
+        djui_hud_set_color(127, 127, 127, 255*fadeout)
       else
-        djui_hud_set_color(0,0,0,255)
+        djui_hud_set_color(0,0,0,255*fadeout)
       end
     end
     djui_hud_print_text(set.name, settingsPos + 24, halfheight - 10 + 14*i, 0.45)
     end
-     djui_hud_set_color(0,0,0,255)
+     djui_hud_set_color(0,0,0,255*fadeout)
 
     djui_hud_print_text(visValue, settingsPos + 16, halfheight - 14, 0.50)
 
-  djui_hud_set_color(255, 255, 255, 255)
+  djui_hud_set_color(255, 255, 255, 255*fadeout)
   
   djui_hud_render_texture(hudcursor, settingsPos + 2, halfheight - 10 + 14*curSetting, 0.5, 0.5)
 
