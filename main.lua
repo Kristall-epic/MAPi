@@ -220,6 +220,12 @@ function play_custom_bgm(m)
       end
   end
   
+  if (_G.charSelectExists) then
+    if (_G.charSelect.is_menu_open()) then
+        curVolume = VOLUME_MUTE
+      end
+    end
+  
 end
 
 hook_event(HOOK_MARIO_UPDATE, play_custom_bgm)
@@ -248,9 +254,7 @@ local function mapi_warp_command(msg)
   if gNetworkPlayers[0] then
     
     if map == 0 then
-    debounce = 15
-    Menu = true
-    game_unpause()
+    open_mapi_menu()
     return true
     end
     
@@ -340,7 +344,7 @@ end
 hook_event(HOOK_ON_PACKET_RECEIVE, packet_receive)
 
 local function on_mods_load()
-  local hangouts = #mapTable
+  local hangouts = #mapTable - 2
   local TEXT_BIND = SETTING_LTRIG == true and " use Start + L or \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu" or " use \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu"
   local string = "Mapi currently has \\#00ff00\\".. tostring(hangouts).. "\\#dcdcdc\\ maps available! ".. TEXT_BIND
   
