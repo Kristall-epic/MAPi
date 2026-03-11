@@ -8,20 +8,22 @@ Description:{"a short description of your",
 Preview:The image that will appear in the menu representing your level
 Bgm:The background music that will play, put nil to skip and just have the default bgm you chose in blender play, use a table to set music for multiple areas within the level
 ]]
+
 local function hangout_map_add(sourceMap, Name, Description, Credit, Preview, Bgm)
   
   local mapID = #mapTable + 1
   table.insert(mapTable, {
       source = sourceMap,
-      name = type(Name) == "string" and Name or "???",
-      description = type(Description) == "table" and Description or {"No description provided."},
+      name = type(Name) == "string" and Name or (smlua_level_util_get_info(sourceMap).fullName or "???"),
+      description = type(Description) == "string" and Description or "No description provided.",
       credit = type(Credit) == "string" and Credit or "???",
       prev = Preview ~= nil and Preview or prevNone,
       entrysnd = nil,
       bgm = Bgm,
       skybox = {nil},
       envtint = {nil},
-      textColor = {r = 255, g = 255, b = 255, a = 255}
+      textColor = {r = 255, g = 255, b = 255, a = 255},
+      codeWarps = {}
   }
     )
   return mapID
@@ -45,11 +47,7 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
       envtint = mapTable[mapID].envtint
   }
   
-  if _G.MAPi.get_cur_hangout() == mapID and Bgm ~= nil then
-    
-    if curBGM ~= nil then
-    audio_stream_stop(curBGM)
-    end
+  if MAPi.get_cur_hangout() == mapID and Bgm ~= nil then
     
   if type(Bgm) == "table" then
     stop_background_music(get_current_background_music())
@@ -62,22 +60,33 @@ local function hangout_map_edit(mapID, sourceMap, Name, Description, Credit, Pre
     end
     
     else
-    audio_stream_play(Bgm, false, 1)
-    audio_stream_set_looping(Bgm, true)
     curBGM = Bgm
     end
-   -- djui_chat_message_create(tostring(gNetworkPlayers[0].currAreaIndex)
 end
 
   return mapID
 end
 
---adds a custom skybox to a hangout, it bases off flipflopbell's custom skybox thing, you can choose either using one single image (the one you define as front) with skytype = "sphere" or use 6 images with skytype = "box"
+--adds a custom skybox to a hangout, it bases off flipflopbell's custom skybox thing, you can choose either using one single image (the one you define as front) with skytype = "ico" or use 6 images with skytype = "box"
 
---you can add skyboxes to subareas by adding another function with same mapID, it goes in order, the first one will be added to area 1, the second to area 2 and so on
-local function hangout_add_skybox(mapID, Skybox)
+--you can add skyboxes to subareas by adding another function with same mapID, it goes in order, the first call will be added to area 1, the second to area 2 and so on
+local function hangout_add_skybox(mapID, Skybox, turnRate)
+  if not Skybox then
+    Skybox = {nil}
+  end
+  
+  if turnRate then
+    if turnRate == 0 then
+      turnRate = 30
+    end
+    rotate = 65536/(turnRate*30)
+  else
+    rotate = 0
+  end
+  
   table.insert(mapTable[mapID].skybox,
     {skytype = Skybox.skytype,
+    spin = rotate,
     up = Skybox.up,
     down = Skybox.down,
     front = Skybox.front,
@@ -88,12 +97,16 @@ local function hangout_add_skybox(mapID, Skybox)
 end
 
 
-local function hangout_edit_skybox(mapID, area, Skybox)
+local function hangout_edit_skybox(mapID, area, Skybox, turnRate)
   local sky = mapTable[mapID].skybox[area]
   
   if sky == nil or Skybox == nil then
     return
-    end
+  end
+  
+  if turnRate and turnRate == 0 then
+    turnRate = 30
+  end
   
    sky.skytype = Skybox.skytype or sky.skytype
    sky.up = Skybox.up or sky.up
@@ -102,8 +115,9 @@ local function hangout_edit_skybox(mapID, area, Skybox)
    sky.back = Skybox.back or sky.back
    sky.left = Skybox.left or sky.left
    sky.right = Skybox.right or sky.right
+   sky.spin = turnRate and (65536/(turnRate*30)) or sky.spin
    
-   if _G.MAPi.get_cur_hangout() == mapID and gNetworkPlayers[0].currAreaIndex == area then
+   if MAPi.get_cur_hangout() == mapID and gNetworkPlayers[0].currAreaIndex == area then
      replace_skybox(mapTable[mapID].skybox, gNetworkPlayers[0])
      end
   
@@ -134,24 +148,18 @@ end
 --Edits the bgm of the given hangout to src, if your map uses a table, use area to specify which are src goes to
 function hangout_edit_bgm(mapID, area, src)
   
-  if _G.MAPi.get_cur_hangout() ~= mapID then
+  if MAPi.get_cur_hangout() ~= mapID then
     return end
   
-  if curBGM ~= nil then
-    audio_stream_stop(curBGM)
-  end
-  
-  stop_background_music(get_current_background_music())
-  
   if type(mapTable[mapID].bgm) == "table" then
-   local bgm = mapTable[mapID].bgm
+   local mapMusic = mapTable[mapID].bgm
     
-    bgm[area] = src or bgm[area]
+    mapMusic[area] = src or mapMusic[area]
     
-    for i, mus in pairs(bgm) do
+    for i, mus in pairs(mapMusic) do
     if i == gNetworkPlayers[0].currAreaIndex then
-    stop_background_music(get_current_background_music())
-    curBGM = mus
+    audio_stream_stop(bgm.src)
+    bgm.src = mus
     end
     end
     
@@ -160,7 +168,8 @@ function hangout_edit_bgm(mapID, area, src)
     end
   
   mapTable[mapID].bgm = src or mapTable[mapID].bgm
-    curBGM = mapTable[mapID].bgm
+    audio_stream_stop(bgm.src)
+    bgm.src = mapTable[mapID].bgm
   
   end
 
@@ -252,7 +261,16 @@ local function hangout_edit_text_color(mapID, color)
     end
   
   mapTable[mapID].textColor = color
+end
+
+local function hangout_add_codewarp(mapID, code, destLevel)
+  local curMap = mapTable[mapID]
+  
+  if curMap and type(code) == "number" and destLevel then
+    curMap.codeWarps[code] = destLevel
   end
+  
+end
 
 _G.MAPi = {
   controller = {
@@ -282,5 +300,6 @@ _G.MAPi = {
   check_players_in_hangout = check_players_in_hangout,
   check_players_hangout_per_act = check_players_hangout_per_act,
   hangout_add_entry_sound = hangout_add_entry_sound,
-  hangout_edit_text_color = hangout_edit_text_color
+  hangout_edit_text_color = hangout_edit_text_color,
+  hangout_add_codewarp = hangout_add_codewarp
 }
