@@ -4,7 +4,7 @@ function replace_skybox(sky, p)
   if sky[p.currAreaIndex] == nil then
     return end
   
-texture_override_set("MAPi_Icosphere_mapi_skybox_unk_rgba16", sky[p.currAreaIndex].front or prevNone)
+texture_override_set("MAPi_Icosphere_skyast_ft_rgba16", sky[p.currAreaIndex].front or prevNone)
         if sky[p.currAreaIndex].skytype == "box" then
         texture_override_set("MAPi_Skybox_Cube_skyast_up_rgba16", sky[p.currAreaIndex].up or prevNone)
         texture_override_set("MAPi_Skybox_Cube_skyast_lf_rgba16", sky[p.currAreaIndex].left or prevNone)
@@ -77,4 +77,33 @@ function open_mapi_menu()
   game_unpause()
   Menu = true
   RANDOM_TOP_TEXT = math.random(1, #random_text)
+  goalFadeout = 1
+end
+
+function close_mapi_menu()
+  debounce = 15
+  goalFadeout = 0
+  fadeout = 0
+end
+
+function string_to_lines(str, length)
+  local line = ""
+  local result = {}
+
+  for word in string.gmatch(str, "%S+") do
+    local testLine = line .. word .. " "
+      if djui_hud_measure_text(testLine) > length then
+          if line ~= "" then
+              table.insert(result, line)
+          end
+          line = word .. " "
+      else
+          line = testLine
+      end
   end
+  if line ~= "" then
+      table.insert(result, line)
+  end
+
+  return result
+end
