@@ -30,6 +30,7 @@ Param | Description | Example
 ----- | ----------- | --------
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()` \| `MAPi.hangout_add_skybox(hangout_coolness)`|
 Skybox | A table with the images, in skytype, specify "box" to use 6 images or "ico" to use only 1 image (the one specified as front) | { skytype = "box", up = skybox_up, down = skybox_dn, front = skybox_ft, back = skybox_bk, left = skybox_lf, right = skybox_rt}
+turnRate | optional, in how many seconds the skybox should complete a full rotation | 60
 
 
 ### MAPi.hangout_edit_skybox()
