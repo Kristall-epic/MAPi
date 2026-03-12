@@ -4,7 +4,7 @@ Adds a map to the map selection menu
 | ----- | ----------- | ------- |
 | LevelNum | The levelnum of a level. | `level_register()` \| `LEVEL_BOB` |
 | Name | The name that will appear in the menu. | "My awesome level!" |
-| Description | A short description for your map | { "My map is very awesome", "and cool" }
+| Description | A short description for your map | "My map is very awesome and cool"
 | Credit | The creator of the map | "John Cool"
 Preview | The image that will appear on the menu along your map, use 256x128 | `get_texture_info("prev_cool")`
 BGM | Custom background music for your level! If you want different music per area you can use a table here with the audio files | `audio_stream_load("Cool BGM")` \| { [1] = bgm1, [2] = bgm2 }
@@ -17,7 +17,7 @@ Param | Description | Example
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()` \| `MAPi.hangout_map_edit(hangout_coolness)`|
 | LevelNum | The levelnum of a level. | `level_register()` \| `LEVEL_BOB` |
 | Name | The name that will appear in the menu. | "My awesome level!" |
-| Description | A short description for your map | { "My map is very awesome", "and cool" }
+| Description | A short description for your map | "My map is very awesome and cool"
 | Credit | The creator of the map | "John Cool"
 Preview | The image that will appear on the menu along your map, use 256x128 | `get_texture_info("prev_cool")`
 Entry Sound | A short sound that plays when the player warps into the level, place `nil` to skip | `audio_sample_load("cool_enter.ogg")`
