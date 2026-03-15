@@ -3,14 +3,19 @@ Menu = false
 settings = false
 goalFadeout = 0
 curSetting = 1
-MOD_STORAGE_LTRIG_EXISTS = mod_storage_exists("LTRIG")
-SETTING_LTRIG = (MOD_STORAGE_LTRIG_EXISTS == true) and mod_storage_load_bool("LTRIG") or true
+SETTING_LTRIG = mod_storage_load_bool("LTRIG") or not mod_storage_exists("LTRIG")
 prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
 local actselect = get_texture_info("hud_actselect")
 local selectedact = get_texture_info("hud_selectedact")
 local hudcursor = get_texture_info("hud_cursor")
 local mapilogo = get_texture_info("logo_mapi")
+local hudsettingsbg = get_texture_info("hud_settingsbg")
+local hudselectedsetting = get_texture_info("hud_selectedsetting")
+
+snd_pageturn = audio_stream_load("pageturn.ogg")
+snd_marker = audio_stream_load("marker.ogg")
+snd_camera = audio_stream_load("camera.ogg")
 
 MAPiUI = {
   logo = {
@@ -60,12 +65,17 @@ mapiSettings = {
   [1] = {
     val = SETTING_LTRIG,
     name = "Open bind",
-    desc = {"The way of opening MAPi"},
-    visTrue = "Start + L",
-    visFalse = "Command only.",
+    desc = "The way of opening MAPi",
+    txt = SETTING_LTRIG == true and "Start + L" or "Command Only",
     host = false,
     func = function() 
       SETTING_LTRIG = not SETTING_LTRIG
+      if SETTING_LTRIG == true then
+        mapiSettings[1].txt = "Start + L"
+      else
+        mapiSettings[1].txt = "Command Only"
+      end
+      
       mod_storage_save_bool("LTRIG", SETTING_LTRIG)
       end
   },
@@ -73,9 +83,8 @@ mapiSettings = {
   [2] = {
     val = true,
     name = "Allow warping",
-    desc = {"[HOST] Allow others", "to warp with MAPi?"},
-    visTrue = "Allow",
-    visFalse = "Don't allow",
+    desc = "[HOST] Allow others to warp with MAPi?",
+    txt = "Allow",
     host = true,
     func = toggle_warping
   },
@@ -83,9 +92,8 @@ mapiSettings = {
   [3] = {
     val = true,
     name = "Warp popups",
-    desc = {"[HOST] Show popups", "when players warp?"},
-    visTrue = "Yes",
-    visFalse = "No",
+    desc = "[HOST] Show popups when players warp?",
+    txt = "Show",
     host = true,
     func = toggle_popups
   }
@@ -141,11 +149,13 @@ if Menu == true then
   if MAPi.controller.buttonPressed & START_BUTTON ~= 0 and debounce == 0 then
     debounce = 15
     settings = not settings
+    play_stream_random_freq(snd_pageturn, -5, -3, 1)
   end
   
   if MAPi.controller.buttonPressed & B_BUTTON ~= 0 then
     if settings == true then
       settings = false
+      play_stream_random_freq(snd_pageturn, -5, -3, 1)
       else
   close_mapi_menu()
   end
@@ -155,6 +165,7 @@ if Menu == true then
     if (MAPi.controller.rawStickY > 50 or MAPi.controller.buttonDown & U_JPAD ~= 0) and debounce == 0 then
       debounce = 5
       curSetting = curSetting - 1
+      play_stream_random_freq(snd_marker, -2, 2, 2)
       
       if curSetting == 0 then
         curSetting = #mapiSettings
@@ -165,6 +176,7 @@ if Menu == true then
     if (MAPi.controller.rawStickY < -50 or MAPi.controller.buttonDown & D_JPAD ~= 0) and debounce == 0 then
       debounce = 5
       curSetting = curSetting + 1
+      play_stream_random_freq(snd_marker, -2, 2, 2)
       
       if curSetting == #mapiSettings + 1 then
         curSetting = 1
@@ -172,13 +184,12 @@ if Menu == true then
       
     end
     
-    if MAPi.controller.buttonPressed & A_BUTTON ~= 0 then
+    if MAPi.controller.buttonPressed & A_BUTTON ~= 0 or math.abs(MAPi.controller.rawStickX) > 80 then
       local cur = mapiSettings[curSetting]
       if (cur.host == true and network_is_server()) or cur.host == false then
-        cur.val = not cur.val
         debounce = 15
-        cur.func(cur.val)
-        play_sound(SOUND_ACTION_READ_SIGN, m.marioObj.header.gfx.cameraToObject)
+        cur.func()
+        play_stream_random_freq(snd_camera, -1, 1, 0.9)
         end
       
       end
@@ -187,7 +198,7 @@ if Menu == true then
     
     return
     else
-      MAPiUI.settings.goalY = djuiheight + halfheight
+      MAPiUI.settings.goalY = djuiheight + 40
     end
   
   if MAPi.controller.buttonPressed & A_BUTTON ~= 0 and debounce == 0 then
@@ -200,44 +211,47 @@ end
   end
   
   if (MAPi.controller.rawStickX > 50 or MAPi.controller.buttonDown & R_JPAD ~= 0) and debounce == 0 then
-  debounce = 5
+  debounce = 6
   MAPiUI.preview.last.tex = mapTable[LevelIndex].prev
   MAPiUI.preview.last.opacity = 255
   LevelIndex = LevelIndex + 1
   if LevelIndex == #mapTable + 1 then
     LevelIndex = 1
   end
-  play_sound(SOUND_MENU_STAR_SOUND, m.marioObj.header.gfx.cameraToObject)
+  
+  play_stream_random_freq(snd_pageturn, -4, 2, 1)
+  
   PIC_INTENDED_ROT = math.random(-MAX_TILT, MAX_TILT)
 elseif (MAPi.controller.rawStickX < -50 or MAPi.controller.buttonDown & L_JPAD ~= 0) and debounce == 0 then
-  debounce = 5
+  debounce = 6
   MAPiUI.preview.last.tex = mapTable[LevelIndex].prev
   MAPiUI.preview.last.opacity = 255
  LevelIndex = LevelIndex - 1
   if LevelIndex == 0 then
     LevelIndex = #mapTable
   end
-  play_sound(SOUND_MENU_STAR_SOUND, m.marioObj.header.gfx.cameraToObject)
+  
+  play_stream_random_freq(snd_pageturn, -4, 2, 1)
+  
   PIC_INTENDED_ROT = math.random(-MAX_TILT, MAX_TILT)
 end
   
   if (MAPi.controller.buttonPressed & L_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & D_JPAD ~= 0) then
-LevelAct = LevelAct - 1
-if LevelAct < 1 then
-  LevelAct = 6
-end
-play_sound(SOUND_MENU_PINCH_MARIO_FACE, m.marioObj.header.gfx.cameraToObject)
-elseif (MAPi.controller.buttonPressed & R_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & U_JPAD ~= 0) then
-LevelAct = LevelAct + 1
-if LevelAct > 6 then
-  LevelAct = 1
-end
-play_sound(SOUND_MENU_PINCH_MARIO_FACE, m.marioObj.header.gfx.cameraToObject)
+    LevelAct = LevelAct - 1
+    play_stream_random_freq(snd_marker, -2, 2, 2)
+    if LevelAct < 1 then
+        LevelAct = 6
+    end
+  elseif (MAPi.controller.buttonPressed & R_CBUTTONS ~= 0 or MAPi.controller.buttonPressed & U_JPAD ~= 0) then
+    LevelAct = LevelAct + 1
+    play_stream_random_freq(snd_marker, -2, 2, 2)
+    if LevelAct > 6 then
+        LevelAct = 1
+    end
+  end
 end
   
   end
-
-end
 
 end
 
@@ -309,6 +323,7 @@ if Menu == true then
  
 for i, map in pairs(mapTable) do
   djui_hud_set_font(FONT_ALIASED)
+  djui_hud_set_color(255, 255, 255, 255*fadeout)
   local players = MAPi.check_players_in_hangout(i)
   local preview = mapTable[i].prev
   local previewScaleX = (256/preview.width)
@@ -442,40 +457,58 @@ djui_hud_render_texture(actselect, MAPiUI.info.act.pos.x, MAPiUI.info.act.pos.y,
   end
   
   local desc = mapTable[LevelIndex].description
-  MAPiUI.info.desc.txt = string_to_lines(desc, 128 + 128/(djuiheight/djuiwidth))
+  MAPiUI.info.desc.txt = string_to_lines(desc, 128 + 148/(djuiheight/djuiwidth))
   MAPiUI.info.desc.pos.x = MAPiUI.info.name.pos.x
   MAPiUI.info.desc.pos.y = MAPiUI.info.act.pos.y + 12
   
   for i, line in pairs(MAPiUI.info.desc.txt) do
     djui_hud_print_text(line, MAPiUI.info.desc.pos.x, (10*i) + MAPiUI.info.desc.pos.y, 0.4)
-    end
+  end
+  
+  
+  
+  --settings
+  
+  if settings == true then
+    djui_hud_set_color(0, 0, 0, 106)
+    djui_hud_render_rect(-20, -20, djuiwidth + 40, djuiheight + 40)
+    djui_hud_reset_color()
+  end
 
     local curSett = mapiSettings[curSetting]
-    local visValue = curSett.val == true and curSett.visTrue or curSett.visFalse
+    local visValue = curSett.txt
+    local desc = string_to_lines(curSett.desc, 140)
   
-  djui_hud_render_rect(halfwidth - 96, MAPiUI.settings.pos.y - 16, 216, 128)
+  djui_hud_render_texture(hudsettingsbg, halfwidth - 108, MAPiUI.settings.pos.y - 16, 0.85, 1)
   
-  djui_hud_set_color(0, 0, 0, 255*fadeout)
+  djui_hud_set_color(255, 255, 255, 255*fadeout)
   for i, set in pairs(mapiSettings) do
     if set.host == true then
       if network_is_server() == false then
         djui_hud_set_color(127, 127, 127, 255*fadeout)
       else
-        djui_hud_set_color(0,0,0,255*fadeout)
+        djui_hud_set_color(255,255,255,255*fadeout)
       end
     end
-    djui_hud_print_text(set.name, halfwidth - 92, MAPiUI.settings.pos.y - 10 + 14*i, 0.35)
+    djui_hud_print_text(set.name, halfwidth - 96, MAPiUI.settings.pos.y - 10 + 14*i, 0.35)
     end
-     djui_hud_set_color(0,0,0,255*fadeout)
+     djui_hud_set_color(255,255,255,255*fadeout)
 
-    djui_hud_print_text(visValue, halfwidth + 64, MAPiUI.settings.pos.y + 16, 0.4)
-    for i, line in pairs(curSett.desc) do
-    djui_hud_print_text(line, halfwidth - (djui_hud_measure_text(line)*.35)/2, MAPiUI.settings.pos.y + 14*i, 0.35)
+    djui_hud_print_text(visValue, halfwidth + 70 - (djui_hud_measure_text(visValue)*0.4)/2, MAPiUI.settings.pos.y + 16, 0.4)
+    djui_hud_set_color(0, 0, 0, 72)
+    
+    djui_hud_render_rect(halfwidth - 32, MAPiUI.settings.pos.y + 28, 64, 14*#desc)
+    djui_hud_reset_color()
+    
+    for i, line in pairs(desc) do
+    djui_hud_print_text(line, halfwidth - (djui_hud_measure_text(line)*.35)/2, MAPiUI.settings.pos.y + 14*i + 16, 0.35)
     end
 
   djui_hud_set_color(255, 255, 255, 255*fadeout)
   
-  djui_hud_render_texture(hudcursor, halfwidth - 90, MAPiUI.settings.pos.y - 10 + 14*curSetting, 0.5, 0.5)
+  djui_hud_render_texture(hudselectedsetting, halfwidth - 106, MAPiUI.settings.pos.y - 9 + 14*curSetting, 0.5, 0.5)
+  
+  djui_hud_print_text("Settings", halfwidth - (djui_hud_measure_text("Settings")*.5)/2, MAPiUI.settings.pos.y - 8, 0.5)
 
 end
 end
