@@ -1,5 +1,5 @@
--- name: MAPi
--- description: An API that let's you add and warp to custom levels
+-- name: MAPi!
+-- description: A hangout map based API library that lets you add custom levels to a warping menu. Also with the ability of easily adding custom music, skyboxes, and more!
 -- pausable: false
 
 bgm = {
@@ -158,11 +158,21 @@ local function before_warp(lvl, area, node)
     }
   end
   
+  
   if curMap.codeWarps and curMap.codeWarps[lvl] then
     if MAPi.get_hangout_from_levelnum(curMap.codeWarps[lvl]) then
       curLevel = MAPi.get_hangout_from_levelnum(curMap.codeWarps[lvl])
     end
-    warp_to_warpnode(curMap.codeWarps[lvl], area, gNetworkPlayers[0].currActNum, node)
+    
+    if curMap.codeWarps[lvl] == gNetworkPlayers[0].currLevelNum then
+      return {
+        destLevel = curMap.codeWarps[lvl],
+        destArea = area,
+        destNode = node
+      }
+    else
+      warp_to_warpnode(curMap.codeWarps[lvl], area, gNetworkPlayers[0].currActNum, node)
+    end
   end
   
 end
@@ -318,17 +328,21 @@ function toggle_warping(ms)
   if msg == "true" then
     gGlobalSyncTable.canWarp = true
     djui_popup_create_global("Host toggled MAPi warping on!", 2)
+    mapiSettings[2].txt = "Allow"
     return true
   elseif msg == "false" then
     gGlobalSyncTable.canWarp = false
     djui_popup_create_global("Host toggled MAPi warping off!", 2)
+    mapiSettings[2].txt = "Do not allow"
     return true
     else
       gGlobalSyncTable.canWarp = not gGlobalSyncTable.canWarp
       if gGlobalSyncTable.canWarp == true then
     djui_popup_create_global("Host toggled MAPi warping on!", 2)
+    mapiSettings[2].txt = "Allow"
     else
       djui_popup_create_global("Host toggled MAPi warping off!", 2)
+      mapiSettings[2].txt = "Do not allow"
       end
       return true
   end
@@ -342,17 +356,21 @@ function toggle_popups(ms)
   if msg == "true" then
     gGlobalSyncTable.warpPopups = true
     djui_popup_create_global("MAPi popups have been activated.", 2)
+    mapiSettings[3].txt = "Show"
     return true
   elseif msg == "false" then
     gGlobalSyncTable.warpPopups = false
     djui_popup_create_global("MAPi popups have been deactivated.", 2)
+    mapiSettings[3].txt = "Do not show"
     return true
     else
       gGlobalSyncTable.warpPopups = not gGlobalSyncTable.warpPopups
       if gGlobalSyncTable.warpPopups == true then
     djui_popup_create_global("MAPi popups have been activated.", 2)
+    mapiSettings[3].txt = "Show"
     else
       djui_popup_create_global("MAPi popups have been deactivated.", 2)
+      mapiSettings[3].txt = "Do not show"
       end
       return true
   end
