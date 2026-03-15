@@ -92,11 +92,15 @@ function string_to_lines(str, length)
 
   for word in string.gmatch(str, "%S+") do
     local testLine = line .. word .. " "
-      if djui_hud_measure_text(testLine) > length then
+      if djui_hud_measure_text(testLine) > length or word:find("/n") then
           if line ~= "" then
-              table.insert(result, line)
+            table.insert(result, line)
           end
-          line = word .. " "
+          if word:find("/n") == 1 then
+            word = string.sub(word, 3)
+          end
+          
+          line = (word ~= "/n" and word.." " or " ")
       else
           line = testLine
       end
@@ -106,4 +110,9 @@ function string_to_lines(str, length)
   end
 
   return result
+end
+
+function play_stream_random_freq(sound, min, max, vol)
+  audio_stream_set_frequency(sound, math.random(min, max)*0.1 + 1)
+  audio_stream_play(sound, true, vol)
 end
