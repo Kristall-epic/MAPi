@@ -116,3 +116,16 @@ function play_stream_random_freq(sound, min, max, vol)
   audio_stream_set_frequency(sound, math.random(min, max)*0.1 + 1)
   audio_stream_play(sound, true, vol)
 end
+
+function set_bgm(music)
+  
+  if bgm.src and music ~= bgm.src then
+    audio_stream_stop(bgm.src)
+    bgm.src = nil
+  end
+  
+  if music and music.isStream == true then
+    bgm.src = music
+  end
+  
+end
