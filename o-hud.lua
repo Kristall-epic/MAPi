@@ -8,7 +8,6 @@ prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
 local actselect = get_texture_info("hud_actselect")
 local selectedact = get_texture_info("hud_selectedact")
-local hudcursor = get_texture_info("hud_cursor")
 local mapilogo = get_texture_info("logo_mapi")
 local hudsettingsbg = get_texture_info("hud_settingsbg")
 local hudselectedsetting = get_texture_info("hud_selectedsetting")
@@ -194,7 +193,7 @@ if Menu == true then
       
       end
     
-    MAPiUI.settings.goalY = halfheight
+    MAPiUI.settings.goalY = halfheight + 4
     
     return
     else
