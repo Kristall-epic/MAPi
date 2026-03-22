@@ -83,10 +83,6 @@ function warp_to_hangout(mapID, actID, warpNode)
       djui_popup_create("This map has an invalid levelNum!", 2)
         else
   
-         if bgm.src ~= nil then
-      audio_stream_stop(bgm.src)
-      bgm.src = nil
-    end 
     local warped = warp_to_warpnode(mapTable[tonumber(mapID)].source, 1, actID or 1, warpNode or 0x0A)
     if warped == true then
         close_mapi_menu()
@@ -139,9 +135,7 @@ hook_event(HOOK_ON_LEVEL_INIT, play_init_sound)
 
 local function before_warp(lvl, area, node)
   
-  if bgm.src ~= nil then
-      audio_stream_stop(bgm.src)
-      bgm.src = nil
+  if bgm.src and (lvl ~= gNetworkPlayers[0].currLevelNum or area ~= gNetworkPlayers[0].currAreaIndex) then
   end
   
   set_env_tint({r = 255, g = 255, b = 255}, {x = 0,y = 0, z = 0})
@@ -180,7 +174,16 @@ end
 hook_event(HOOK_BEFORE_WARP, before_warp)
 
 
-function on_warp()
+function on_warp(warpType, lvl, area, node)
+  if MAPi.get_hangout_from_levelnum(lvl) then
+    curLevel = MAPi.get_hangout_from_levelnum(lvl)
+    if warpType ~= WARP_TYPE_SAME_AREA then
+      if bgm.src then
+        audio_stream_stop(bgm.src)
+      end
+    end
+  end
+  
   curMap = mapTable[curLevel]
   curArea = gNetworkPlayers[0].currAreaIndex
   
@@ -199,24 +202,19 @@ function on_warp()
       end
     end
   
-  if bgm.src then
-    audio_stream_stop(bgm.src)
-    end
-  
 if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].bgm then
   if type(mapTable[curLevel].bgm) == "table" then
     for i, musc in pairs(mapTable[curLevel].bgm) do
     if i == gNetworkPlayers[0].currAreaIndex then
-    bgm.src = musc.isStream == true and musc or nil
+      set_bgm(musc.isStream == true and musc or nil)
     end
     end
     else
-      if bgm.src then
-    audio_stream_stop(bgm.src)
-    end
-    bgm.src = mapTable[curLevel].bgm.isStream == true and mapTable[curLevel].bgm or nil
+      
+    set_bgm(mapTable[curLevel].bgm.isStream == true and mapTable[curLevel].bgm or nil)
   end
-  stop_background_music(get_current_background_music())
+else
+  set_bgm(nil)
 end
 
 if gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) and mapTable[curLevel].envtint[p.currAreaIndex] then
@@ -240,6 +238,7 @@ function play_custom_bgm()
   if bgm.src then
   audio_stream_play(bgm.src, false, bgm.volume)
   audio_stream_set_looping(bgm.src, true)
+  stop_background_music(get_current_background_music())
   
   if gNetworkPlayers[0].currLevelNum ~= mapTable[curLevel].source then
     audio_stream_stop(bgm.src)
