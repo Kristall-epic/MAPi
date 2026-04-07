@@ -125,6 +125,18 @@ end
 
 --adds an environment tint to the given hangout map
 local function hangout_add_env_tint(mapID, Color, Dir)
+  if not color then
+    color = {r = 255, g = 255, b = 255}
+  end
+  
+  if (type(Color) == "string") then
+    Color = hex_to_table(Color)
+  end
+  
+  if not Dir then
+    Dir = {x = 0, y = 0, z = 0}
+  end
+  
   table.insert(mapTable[mapID].envtint,
     {color = Color, dir = Dir})
 end
@@ -136,12 +148,16 @@ local function hangout_edit_env_tint(mapID, area, Color, Dir)
     return
   end
   
-tint.color = Color or tint.color
-tint.dir = Dir or tint.dir
+  if (type(Color) == "string") then
+    Color = hex_to_table(Color)
+  end
+  
+  tint.color = Color or tint.color
+  tint.dir = Dir or tint.dir
 
-if (gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(mapID)) and gNetworkPlayers[0].currAreaIndex == area then
+  if (gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(mapID)) and gNetworkPlayers[0].currAreaIndex == area then
      set_env_tint(tint.color, tint.dir)
-     end
+  end
   
 end
 
@@ -177,7 +193,7 @@ function hangout_edit_bgm(mapID, area, src)
 --gets the current mapID of the level the player is in, if the current level is not in MAPi, returns nil
 local function get_cur_hangout()
   if gNetworkPlayers[0] then
-    return gNetworkPlayers[0].currLevelNum == _G.MAPi.get_levelnum_from_hangout(curLevel) and curLevel or nil
+    return gNetworkPlayers[0].currLevelNum == MAPi.get_levelnum_from_hangout(curLevel) and curLevel or nil
     end
 end
 
@@ -250,6 +266,10 @@ if mapTable[mapID] ~= nil then
 end
 
 local function hangout_edit_text_color(mapID, color)
+  
+  if (type(color) == "string") then
+    color = hex_to_table(color)
+  end
   
   for i, col in pairs(color) do
     if col > 255 then
