@@ -50,7 +50,7 @@ end
 --from CS by Squishy
 function nullify_inputs(m)
     local c = m.controller
-    _G.MAPi.controller = {
+    MAPi.controller = {
         buttonDown = c.buttonDown,
         buttonPressed = c.buttonPressed & ~_G.MAPi.controller.buttonDown,
         extStickX = c.extStickX,
@@ -127,5 +127,18 @@ function set_bgm(music)
   if music and music.isStream == true then
     bgm.src = music
   end
+  
+end
+
+function hex_to_table(color)
+  if (string.sub(color, 1, 1) == "#") then
+    color = string.sub(color, 2)
+  end
+  
+  local red = tonumber(string.sub(color, 1, 2), 16)
+  local gre = tonumber(string.sub(color, 3, 4), 16)
+  local blu = tonumber(string.sub(color, 5, 6), 16)
+  
+  return {r = red, g = gre, b = blu}
   
 end
