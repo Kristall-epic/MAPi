@@ -9,7 +9,7 @@ bgm = {
 }
 
 VOLUME_PAUSE = 0.25
-VOLUME_DEFAULT = 1
+VOLUME_DEFAULT = 0.85
 VOLUME_MUTE = 0.001
 curLevel = 1
 gGlobalSyncTable.canWarp = true
@@ -103,8 +103,8 @@ end
 
 local function custom_hangout_bgm(m, seq)
   if gMarioStates[0].playerIndex == 0 then
-    if bgm.src ~= nil and seq == get_current_background_music() then
-      return 0
+    if bgm.src and seq == get_current_background_music() then
+        return 0
     end
   end
 end
@@ -230,15 +230,15 @@ hook_event(HOOK_ON_WARP, on_warp)
 
 
 function play_custom_bgm()
-  m = gMarioStates[0]
-  curMap = mapTable[MAPi.get_cur_hangout()]
+  local m = gMarioStates[0]
+  local curMap = mapTable[MAPi.get_cur_hangout()]
+  local seq = get_current_background_music()
   if m.playerIndex ~= 0 then
     return end
   
   if bgm.src then
   audio_stream_play(bgm.src, false, bgm.volume)
   audio_stream_set_looping(bgm.src, true)
-  stop_background_music(get_current_background_music())
   
   if gNetworkPlayers[0].currLevelNum ~= mapTable[curLevel].source then
     audio_stream_stop(bgm.src)
@@ -256,7 +256,12 @@ function play_custom_bgm()
         else
       bgm.goalVolume = VOLUME_DEFAULT
       end
+      
+    if (bgm.src) then
+    stop_background_music(get_current_background_music())
+    end
   end
+  
   if (charSelectExists) then
     if (charSelect.is_menu_open()) then
       if charSelect.get_option(charSelect.optionTableRef.music).toggle == 1 or charSelect.get_option(charSelect.optionTableRef.music).toggle == 2 then
