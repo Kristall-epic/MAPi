@@ -47,7 +47,7 @@ Adds an environment tint to the given hangout MapID
 Param | Description | Example
 ----- | ----------- | --------
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()` \| `MAPi.hangout_add_env_tint(hangout_coolness)`|
-Color | The color in {r, g, b} for the map | `{r = 255, g = 220, b = 127}`
+Color | The color in {r, g, b} or "#RRGGBB" for the map | `{r = 255, g = 220, b = 127}` \| `"#916CCA"`
 Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
 
 
@@ -57,7 +57,7 @@ Param | Description | Example
 ----- | ----------- | --------
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()` \| `MAPi.hangout_edit_env_tint(hangout_coolness)`|
 Area | The area index of the environment tint you wanna change, normally 1 | 1 \| 2 \| 4
-Color | The color in {r, g, b} for the map | `{r = 255, g = 220, b = 127}`
+Color | The color in {r, g, b} or "#RRGGBB" for the map | `{r = 255, g = 220, b = 127}` \| `"#916CCA"`
 Direction | The direction light is coming from | `{x = -1, y = 1, z = 0}`
 
 
@@ -121,7 +121,7 @@ Edits the color of a hangout's name on the menu
 Param | Description | Example
 ----- | ----------- | --------
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()` \| `MAPi.hangout_edit_text_color(hangout_coolness)`|
-Color | a table containing the values rgba for the text | `{r = 183, g = 226, b = 92, a = 255}`, `{r = 0x91, g = 0x6c, b = 0xca}`
+Color | A string or table containing the color | `{r = 183, g = 226, b = 92, a = 255}`, `{r = 0x91, g = 0x6c, b = 0xca}`, `"#916CCA"`
 
 
 ### MAPi.hangout_add_codewarp()
