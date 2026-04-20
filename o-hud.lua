@@ -3,7 +3,8 @@ Menu = false
 settings = false
 goalFadeout = 0
 curSetting = 1
-SETTING_LTRIG = mod_storage_load_bool("LTRIG") or not mod_storage_exists("LTRIG")
+SETTING_LTRIG = mod_storage_exists("LTRIG") and mod_storage_load_bool("LTRIG") or true
+
 prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
 local actselect = get_texture_info("hud_actselect")
@@ -11,6 +12,7 @@ local selectedact = get_texture_info("hud_selectedact")
 local mapilogo = get_texture_info("logo_mapi")
 local hudsettingsbg = get_texture_info("hud_settingsbg")
 local hudselectedsetting = get_texture_info("hud_selectedsetting")
+local menubg = get_texture_info("menubg")
 
 snd_pageturn = audio_stream_load("pageturn.ogg")
 snd_marker = audio_stream_load("marker.ogg")
@@ -306,8 +308,8 @@ if Menu == true then
     Menu = false
   end
 
-  djui_hud_set_color(0, 0, 0, 200*fadeout)
-  djui_hud_render_rect(-20, -20, djuiwidth + 40, djuiheight + 20)
+  djui_hud_set_color(60, 60, 60, 220*fadeout)
+  djui_hud_render_texture(menubg, 0, 0, 1, 1)
   djui_hud_set_color(255, 255, 255, 225*fadeout)
   
   if mapTable[LevelIndex].textColor ~= nil and type(mapTable[LevelIndex].textColor) == "table" then
