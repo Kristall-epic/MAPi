@@ -228,6 +228,7 @@ end
 
 hook_event(HOOK_ON_WARP, on_warp)
 
+local startPopup = 2
 
 function play_custom_bgm()
   local m = gMarioStates[0]
@@ -271,6 +272,13 @@ function play_custom_bgm()
   end
   
   bgm.volume = lerp(bgm.volume, bgm.goalVolume, 0.2)
+  
+  if (startPopup > 0) then
+    startPopup = startPopup - 1
+  end
+  if (startPopup == 1) then
+    startup_msg()
+  end
   
 end
 
@@ -396,25 +404,17 @@ function packet_receive(data_table)
 end
 hook_event(HOOK_ON_PACKET_RECEIVE, packet_receive)
 
-local function on_mods_load()
-  
-  for i, mod in pairs(gActiveMods) do
-    if mod.incompatible == "romhack" then
-      IS_ROMHACK = true
-    end
-  end
+function startup_msg()
   
   mapTable[1].source = gLevelValues.entryLevel
   
   local hangouts = #mapTable - 2
-  local TEXT_BIND = SETTING_LTRIG == true and " use Start + L or \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu" or " use \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu"
-  local string = "Mapi currently has \\#00ff00\\".. tostring(hangouts).. "\\#dcdcdc\\ maps available! ".. TEXT_BIND
+  local TEXT_BIND = SETTING_LTRIG == true and "Use \\#00ffff\\Start + L\\#dcdcdc\\ or \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu!" or "Use \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu!"
+  local string = "\\#ee3333\\M\\#00cc00\\A\\#cccc00\\P\\#916cca\\i\\#dcdcdc\\ currently has \\#00ff00\\".. tostring(hangouts).. "\\#dcdcdc\\ hangout maps available! \n".. TEXT_BIND
   
-  djui_popup_create(string, 3)
+  djui_chat_message_create(string)
   
 end
-
-hook_event(HOOK_ON_MODS_LOADED, on_mods_load)
 
 if network_is_server() then
   hook_chat_command("mapi-warp-all", "- Warps everyone to your current hangout", tp_everyone_level)
