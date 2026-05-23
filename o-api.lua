@@ -292,6 +292,17 @@ local function hangout_add_codewarp(mapID, code, destLevel)
   
 end
 
+local function hangout_hook_event(mapID, hookID, func)
+  if not hooked_hangouts[mapID] then
+    hooked_hangouts[mapID] = {
+      [hookID] = func
+    }
+  else
+    hooked_hangouts[mapID][hookID] = func
+  end
+  
+end
+
 _G.MAPi = {
   controller = {
     buttonDown = 0,
@@ -321,5 +332,6 @@ _G.MAPi = {
   check_players_hangout_per_act = check_players_hangout_per_act,
   hangout_add_entry_sound = hangout_add_entry_sound,
   hangout_edit_text_color = hangout_edit_text_color,
-  hangout_add_codewarp = hangout_add_codewarp
+  hangout_add_codewarp = hangout_add_codewarp,
+  hangout_hook_event = hangout_hook_event
 }
