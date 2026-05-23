@@ -131,3 +131,12 @@ Param | Description | Example
 MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()`
 Code | The number to check for everytime you warp inside of the given hangout, if the level destination is this number, it replaces the warp to "dest" | 72
 Dest | The levelnum to warp to if the warpnode's destLevel is equal to Code, you can set this to the value of a level_register() so it always warps you to that level regardless of its levelnum | LEVEL_COOL = `level_register()` \| `MAPi.hangout_add_codewarp(hangout_coolness, 72, LEVEL_COOL)`
+
+
+### MAPi.hangout_hook_event()
+Hooks an event to run in a specific hangout
+Param | Description | Example
+----- | ----------- | --------
+MapID | The number returned from hangout_map_add() and position on the menu | hangout_coolness = `MAPi.hangout_map_add()`
+Hook | The kind of hook that will run | HOOK_MARIO_UPDATE
+Func | The function to be called in the hangout when the hook runs | function mario_update(m) djui_chat_message_create("hi") end
