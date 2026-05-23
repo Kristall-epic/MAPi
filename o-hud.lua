@@ -3,7 +3,18 @@ Menu = false
 settings = false
 goalFadeout = 0
 curSetting = 1
-SETTING_LTRIG = mod_storage_exists("LTRIG") and mod_storage_load_bool("LTRIG") or true
+OPENBIND_NONE = 2
+OPENBIND_L = 0
+OPENBIND_X = 1
+OPENBIND_MAX = 3
+
+bindNames = {
+  [OPENBIND_NONE] = "Command Only",
+  [OPENBIND_L] = "Start + L",
+  [OPENBIND_X] = "Start + X"
+}
+
+openBind = mod_storage_load_number("LTRIG")
 
 prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
@@ -64,20 +75,19 @@ MAPiUI = {
 mapiSettings = {
   
   [1] = {
-    val = SETTING_LTRIG,
+    val = openBind,
     name = "Open bind",
     desc = "The way of opening MAPi",
-    txt = SETTING_LTRIG == true and "Start + L" or "Command Only",
+    txt = bindNames[openBind],
     host = false,
     func = function() 
-      SETTING_LTRIG = not SETTING_LTRIG
-      if SETTING_LTRIG == true then
-        mapiSettings[1].txt = "Start + L"
-      else
-        mapiSettings[1].txt = "Command Only"
+      openBind = openBind + 1
+      if openBind == OPENBIND_MAX then
+        openBind = OPENBIND_L
       end
+      mapiSettings[1].txt = bindNames[openBind]
       
-      mod_storage_save_bool("LTRIG", SETTING_LTRIG)
+      mod_storage_save_number("LTRIG", openBind)
       end
   },
   
@@ -97,6 +107,15 @@ mapiSettings = {
     txt = "Show",
     host = true,
     func = toggle_popups
+  },
+
+  [4] = {
+    val = true,
+    name = "Warp all",
+    desc = "[HOST] Warps everyone to your current hangout and act",
+    txt = "",
+    host = true,
+    func = tp_everyone_level
   }
   
 }
@@ -130,11 +149,14 @@ local function mario_update(m)
  
  if m.playerIndex == 0 then
    
-if is_game_paused() and djui_hud_is_pause_menu_created() == false then
-
-if SETTING_LTRIG == true and m.controller.buttonPressed & L_TRIG ~= 0 and debounce == 0 then
-  open_mapi_menu()
-end
+  if is_game_paused() and djui_hud_is_pause_menu_created() == false then
+  
+  if debounce == 0 then
+    if (openBind == OPENBIND_L and m.controller.buttonPressed & L_TRIG ~= 0) or (openBind == OPENBIND_X and m.controller.buttonPressed & X_BUTTON ~= 0) then
+      open_mapi_menu()
+    end
+    
+  end
 end
 
 if debounce > 0 then
@@ -259,7 +281,7 @@ end
 hook_event(HOOK_BEFORE_MARIO_UPDATE, mario_update)
 
 local function on_hud_render(m)
-  local BIND = SETTING_LTRIG == true and "L Button" or "/mapi-warp"
+  local BIND = openBind == OPENBIND_NONE and "/mapi-warp" or openBind == OPENBIND_X and "X Button" or openBind == OPENBIND_L and "L Button"
   local hangoutPlayers = MAPi.check_players_in_hangout(LevelIndex)
   
   if is_game_paused() and djui_hud_is_pause_menu_created() == false then
@@ -484,12 +506,10 @@ djui_hud_render_texture(actselect, MAPiUI.info.act.pos.x, MAPiUI.info.act.pos.y,
   
   djui_hud_set_color(255, 255, 255, 255*fadeout)
   for i, set in pairs(mapiSettings) do
-    if set.host == true then
-      if network_is_server() == false then
+    if set.host == true and network_is_server() == false then
         djui_hud_set_color(127, 127, 127, 255*fadeout)
-      else
-        djui_hud_set_color(255,255,255,255*fadeout)
-      end
+    else
+      djui_hud_set_color(255,255,255,255*fadeout)
     end
     djui_hud_print_text(set.name, halfwidth - 96, MAPiUI.settings.pos.y - 10 + 14*i, 0.35)
     end
