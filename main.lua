@@ -2,10 +2,21 @@
 -- description: A hangout map based API library that lets you add custom levels to a warping menu. Also with the ability of easily adding custom music, skyboxes, and more!
 -- pausable: false
 
+
 bgm = {
   src = nil,
   goalVolume = 1,
   volume = 1
+}
+
+warpInfo = {
+  ing = false,
+  timer = 0,
+  info = {
+    lvl = 0,
+    ar = 0,
+    nd = 0
+  }
 }
 
 VOLUME_PAUSE = 0.25
@@ -114,26 +125,37 @@ hook_event(HOOK_ON_SEQ_LOAD, custom_hangout_bgm)
 
 local function play_init_sound()
   local mapID = MAPi.get_cur_hangout()
+  warpInfo.ing = false
+  warpInfo.timer = 0
 
-if mapID == nil then
+  if mapID == nil then
   return end
 
-if mapTable[mapID].entrysnd ~= nil then
-  snd = mapTable[mapID].entrysnd
-  if type(snd) == "number" then
-    play_sound(snd, gMarioStates[0].pos)
-  else
-    if snd.isStream == false then
-    audio_sample_play(mapTable[mapID].entrysnd, gMarioStates[0].pos, 3)
-    end
-    end
-end
+  if mapTable[mapID].entrysnd then
+    snd = mapTable[mapID].entrysnd
+    if type(snd) == "number" then
+      play_sound(snd, gMarioStates[0].pos)
+    else
+      if snd.isStream == false then
+      audio_sample_play(mapTable[mapID].entrysnd, gMarioStates[0].pos, 3)
+      end
+      end
+  end
 
 end
 
 hook_event(HOOK_ON_LEVEL_INIT, play_init_sound)
 
 local function before_warp(lvl, area, node)
+  
+  if (MAPi.get_cur_hangout()) then
+    warpInfo.ing = true
+    warpInfo.info = {
+      lvl = lvl,
+      ar = area,
+      nd = node
+    }
+  end
   
   if bgm.src and (lvl ~= gNetworkPlayers[0].currLevelNum or area ~= gNetworkPlayers[0].currAreaIndex) then
   end
@@ -175,6 +197,9 @@ hook_event(HOOK_BEFORE_WARP, before_warp)
 
 
 function on_warp(warpType, lvl, area, node)
+  warpInfo.ing = false
+  warpInfo.timer = 0
+  
   if MAPi.get_hangout_from_levelnum(lvl) then
     curLevel = MAPi.get_hangout_from_levelnum(lvl)
     if warpType ~= WARP_TYPE_SAME_AREA then
@@ -228,7 +253,7 @@ end
 
 hook_event(HOOK_ON_WARP, on_warp)
 
-local startPopup = 2
+local startPopup = 5
 
 function play_custom_bgm()
   local m = gMarioStates[0]
@@ -280,6 +305,34 @@ function play_custom_bgm()
     startup_msg()
   end
   
+  if (warpInfo.ing == true and MAPi.get_cur_hangout() and MAPi.get_cur_hangout() > 2) then
+    warpInfo.timer = warpInfo.timer + 1
+    
+    if (not m.area.camera) then
+      warpInfo.timer = 0
+    end
+    
+    if warpInfo.timer > 30 and m.area.camera.cutscene ~= CUTSCENE_ENTER_PAINTING then
+      
+      local wasItLevel = smlua_level_util_get_info(warpInfo.info.lvl)
+      local wasItArea = not area_get_any_warp_node()
+      local wasItNode = not area_get_warp_node(warpInfo.info.nd)
+      djui_chat_message_create("\\#00ffff\\MAPi\\#dcdcdc\\: Warp in "..mapTable[curLevel].name.." failed! \nDest. Level:\\#00ffff\\"..warpInfo.info.lvl.." \\#dcdcdc\\Dest. Area:\\#00ffff\\"..warpInfo.info.ar.."\\#dcdcdc\\ Dest. Node:\\#00ffff\\"..warpInfo.info.nd.." ("..string.format("0x%X", warpInfo.info.nd)..")")
+      
+      warp_to_hangout(2, 1, 0x20)
+      m.health = 0x2000
+      warpInfo.ing = false
+      warpInfo.timer = 0
+      
+      warpInfo.info = {
+        lvl = 0,
+        ar = 0,
+        nd = 0
+      }
+    end
+    
+  end
+  
 end
 
 hook_event(HOOK_UPDATE, play_custom_bgm)
@@ -294,7 +347,7 @@ end
   return true
 end
 
-local function tp_everyone_level()
+function tp_everyone_level()
   network_send(true, {
         entered_level = curLevel,
         entered_act = gNetworkPlayers[0].currActNum
@@ -323,7 +376,7 @@ local function mapi_warp_command(msg)
     djui_popup_create("This map does not Exist!", 1)
     return true
     else
-      warp_to_hangout(map, 1, (map == 2 and 0x20 or map == 1 and 0xFF) or 0x0A)
+      warp_to_hangout(map, 1, (map == 2 and gLevelValues.exitCastleWarpNode or map == 1 and 0xFF) or 0x0A)
       return true
   end
   else
@@ -397,7 +450,7 @@ function packet_receive(data_table)
     local entered_act = data_table.entered_act
     if gNetworkPlayers[0].currLevelNum ~= entered_level or
        gNetworkPlayers[0].currActNum ~= entered_act then
-        warp_to_hangout(entered_level, entered_act)
+        warp_to_hangout(entered_level, entered_act, (entered_level == 2 and gLevelValues.exitCastleWarpNode or entered_level == 1 and 0xFF) or 0x0A)
        end
     end
 
@@ -407,10 +460,12 @@ hook_event(HOOK_ON_PACKET_RECEIVE, packet_receive)
 function startup_msg()
   
   mapTable[1].source = gLevelValues.entryLevel
+  mapTable[2].source = gLevelValues.exitCastleLevel
   
   local hangouts = #mapTable - 2
-  local TEXT_BIND = SETTING_LTRIG == true and "Use \\#00ffff\\Start + L\\#dcdcdc\\ or \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu!" or "Use \\#00ffff\\/mapi-warp\\#dcdcdc\\ to open the menu!"
-  local string = "\\#ee3333\\M\\#00cc00\\A\\#cccc00\\P\\#916cca\\i\\#dcdcdc\\ currently has \\#00ff00\\".. tostring(hangouts).. "\\#dcdcdc\\ hangout maps available! \n".. TEXT_BIND
+  local BIND = openBind == OPENBIND_NONE and "/mapi-warp" or openBind == OPENBIND_X and "Start + X" or openBind == OPENBIND_L and "Start + L"
+  local TEXT_BIND = "Use \\#00ffff\\"..BIND.."\\#ffffff\\"..(openBind ~= OPENBIND_NONE and " or \\#00ffff\\/mapi-warp\\#ffffff\\" or "").." to open the menu!"
+  local string = "\\#ee3333\\M\\#00cc00\\A\\#cccc00\\P\\#916cca\\i\\#ffffff\\ currently has \\#00ff00\\".. tostring(hangouts).. "\\#ffffff\\ hangout maps available! \n".. TEXT_BIND
   
   djui_chat_message_create(string)
   
