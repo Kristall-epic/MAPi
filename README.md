@@ -1,3 +1,10 @@
+# MAPi
+MAPi is a mod for SM64CoopDX that tries to make adding hangout maps to the game easier while offering ways of adding things like custom background music, skyboxes, and even helping to add subareas!
+
+# [Template Map](https://github.com/Kristall-epic/mapi-level-template)
+
+# API Documentation
+
 ### MAPi.hangout_map_add()
 Adds a map to the map selection menu
 | Param | Description | Example |
