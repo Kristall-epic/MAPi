@@ -374,10 +374,9 @@ for i, map in pairs(mapTable) do
   if (players ~= 0) then
   djui_hud_render_texture(playerhud, ((65 * i) - posX) + halfwidth - (playerhud.width*0.5), djuiheight - 65 - intendedY, 0.5, 0.5)
   end
-  
+  djui_hud_set_rotation(0x0, 0, 0)
   djui_hud_print_text(players ~= 0 and tostring(players) or "", ((65 * i) - posX) + halfwidth, djuiheight - 65 - intendedY, 0.5)
   end
-  djui_hud_set_rotation(0x0, 0, 0)
   
 end
 
