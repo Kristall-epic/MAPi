@@ -56,7 +56,7 @@ mapTable = {
   [2] = {
     source = LEVEL_CASTLE,
     name = "Castle Main Floor",
-    description = "Princess Peach's castle. The main area of the game",
+    description = "Princess Peach's castle. The iconic and memorable place of this game. With vast worlds inside paintings, Mario sets off to find the Power Stars and free everyone!",
     credit = "Nintendo",
     prev = prevCMF,
     entrysnd = SOUND_MENU_MARIO_CASTLE_WARP,
@@ -393,21 +393,21 @@ function toggle_warping(ms)
   if msg == "true" then
     gGlobalSyncTable.canWarp = true
     djui_popup_create_global("Host toggled MAPi warping on!", 2)
-    mapiSettings[2].txt = "Allow"
+    mapiSettings[SETTING_ALLOW_WARP].txt = "Allow"
     return true
   elseif msg == "false" then
     gGlobalSyncTable.canWarp = false
     djui_popup_create_global("Host toggled MAPi warping off!", 2)
-    mapiSettings[2].txt = "Do not allow"
+    mapiSettings[SETTING_ALLOW_WARP].txt = "Do not allow"
     return true
     else
       gGlobalSyncTable.canWarp = not gGlobalSyncTable.canWarp
       if gGlobalSyncTable.canWarp == true then
     djui_popup_create_global("Host toggled MAPi warping on!", 2)
-    mapiSettings[2].txt = "Allow"
+    mapiSettings[SETTING_ALLOW_WARP].txt = "Allow"
     else
       djui_popup_create_global("Host toggled MAPi warping off!", 2)
-      mapiSettings[2].txt = "Do not allow"
+      mapiSettings[SETTING_ALLOW_WARP].txt = "Do not allow"
       end
       return true
   end
@@ -421,21 +421,21 @@ function toggle_popups(ms)
   if msg == "true" then
     gGlobalSyncTable.warpPopups = true
     djui_popup_create_global("MAPi popups have been activated.", 2)
-    mapiSettings[3].txt = "Show"
+    mapiSettings[SETTING_POPUPS].txt = "Show"
     return true
   elseif msg == "false" then
     gGlobalSyncTable.warpPopups = false
     djui_popup_create_global("MAPi popups have been deactivated.", 2)
-    mapiSettings[3].txt = "Do not show"
+    mapiSettings[SETTING_POPUPS].txt = "Do not show"
     return true
     else
       gGlobalSyncTable.warpPopups = not gGlobalSyncTable.warpPopups
       if gGlobalSyncTable.warpPopups == true then
     djui_popup_create_global("MAPi popups have been activated.", 2)
-    mapiSettings[3].txt = "Show"
+    mapiSettings[SETTING_POPUPS].txt = "Show"
     else
       djui_popup_create_global("MAPi popups have been deactivated.", 2)
-      mapiSettings[3].txt = "Do not show"
+      mapiSettings[SETTING_POPUPS].txt = "Do not show"
       end
       return true
   end
