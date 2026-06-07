@@ -14,7 +14,16 @@ bindNames = {
   [OPENBIND_X] = "Start + X"
 }
 
+menuControls = {
+  [1] = "[<-/->] Choose",
+  [2] = "[<C>, U/D DPad] Change Act",
+  [3] = "[A] Warp",
+  [4] = "[B] Close",
+  [5] = "[Start] Settings"
+}
+
 openBind = mod_storage_load_number("LTRIG")
+menuHelp = mod_storage_load_bool("MENUHELP")
 
 prevNone = get_texture_info("prev_unk")
 local playerhud = get_texture_info("hud_players")
@@ -72,9 +81,15 @@ MAPiUI = {
   
 }
 
+SETTING_OPEN_BIND = 1
+SETTING_MENU_HELP = 2
+SETTING_ALLOW_WARP = 3
+SETTING_POPUPS = 4
+SETTING_WARP_ALL = 5
+
 mapiSettings = {
   
-  [1] = {
+  [SETTING_OPEN_BIND] = {
     val = openBind,
     name = "Open bind",
     desc = "The way of opening MAPi",
@@ -85,13 +100,28 @@ mapiSettings = {
       if openBind == OPENBIND_MAX then
         openBind = OPENBIND_L
       end
-      mapiSettings[1].txt = bindNames[openBind]
+      mapiSettings[SETTING_OPEN_BIND].txt = bindNames[openBind]
       
       mod_storage_save_number("LTRIG", openBind)
       end
   },
+
+  [SETTING_MENU_HELP] = {
+    val = menuHelp,
+    name = "Hide menu help",
+    desc = "Hides the text that tells you how to use the menu",
+    txt = menuHelp == true and "Hide" or "Show",
+    host = false,
+    func = function() 
+      menuHelp = not menuHelp
+      
+      mapiSettings[SETTING_MENU_HELP].txt = menuHelp == true and "Hide" or "Show"
+      
+      mod_storage_save_bool("MENUHELP", menuHelp)
+      end
+  },
   
-  [2] = {
+  [SETTING_ALLOW_WARP] = {
     val = true,
     name = "Allow warping",
     desc = "[HOST] Allow others to warp with MAPi?",
@@ -100,7 +130,7 @@ mapiSettings = {
     func = toggle_warping
   },
 
-  [3] = {
+  [SETTING_POPUPS] = {
     val = true,
     name = "Warp popups",
     desc = "[HOST] Show popups when players warp?",
@@ -109,7 +139,7 @@ mapiSettings = {
     func = toggle_popups
   },
 
-  [4] = {
+  [SETTING_WARP_ALL] = {
     val = true,
     name = "Warp all",
     desc = "[HOST] Warps everyone to your current hangout and act",
@@ -117,7 +147,6 @@ mapiSettings = {
     host = true,
     func = tp_everyone_level
   }
-  
 }
 
 random_text = {
@@ -281,7 +310,7 @@ end
 hook_event(HOOK_BEFORE_MARIO_UPDATE, mario_update)
 
 local function on_hud_render(m)
-  local BIND = openBind == OPENBIND_NONE and "/mapi-warp" or openBind == OPENBIND_X and "X Button" or openBind == OPENBIND_L and "L Button"
+  local BIND = openBind == OPENBIND_NONE and "/mapi-warp" or openBind == OPENBIND_X and "[X] Button" or openBind == OPENBIND_L and "[L] Button"
   local hangoutPlayers = MAPi.check_players_in_hangout(LevelIndex)
   
   if is_game_paused() and djui_hud_is_pause_menu_created() == false then
@@ -323,213 +352,220 @@ end
   MAPiUI.settings.pos.x = halfwidth
   MAPiUI.settings.pos.y = lerp(MAPiUI.settings.pos.y, MAPiUI.settings.goalY, 0.3)
     
-if Menu == true then
-  
-  fadeout = lerp(fadeout, goalFadeout, 0.3)
-  if goalFadeout == 0 and fadeout < 0.1 then
-    Menu = false
-  end
-
-  djui_hud_set_color(60, 60, 60, 220*fadeout)
-  djui_hud_render_texture(menubg, 0, 0, 1, 1)
-  djui_hud_set_color(255, 255, 255, 225*fadeout)
-  
-  if mapTable[LevelIndex].textColor ~= nil and type(mapTable[LevelIndex].textColor) == "table" then
-    mapTextColor = mapTable[LevelIndex].textColor
+  if Menu == true then
     
-    approach_color_to_color(MAPiUI.info.name.color, mapTextColor)
-    else
-      approach_color_to_color(MAPiUI.info.name.color, {r = 255, g = 255, b = 255, a = 255})
+    fadeout = lerp(fadeout, goalFadeout, 0.3)
+    if goalFadeout == 0 and fadeout < 0.1 then
+      Menu = false
     end
- 
- --Small photos 
- 
-for i, map in pairs(mapTable) do
-  djui_hud_set_font(FONT_ALIASED)
-  djui_hud_set_color(255, 255, 255, 255*fadeout)
-  local players = MAPi.check_players_in_hangout(i)
-  local preview = mapTable[i].prev
-  local previewScaleX = (256/preview.width)
-  local previewScaleY = (128/preview.height)
-  local diff = math.abs(i - LevelIndex)
-  local intendedY = (10/(diff+1))
-  local photoPosX =  (((65 * i) - posX) + halfwidth - 20) - 2
   
-  if diff == 0 then
-    djui_hud_set_rotation(selectedTilt, 0.5, 0.5)
+    djui_hud_set_color(60, 60, 60, 220*fadeout)
+    djui_hud_render_texture(menubg, 0, 0, 1, 1)
+    djui_hud_set_color(255, 255, 255, 225*fadeout)
     
+    if mapTable[LevelIndex].textColor ~= nil and type(mapTable[LevelIndex].textColor) == "table" then
+      mapTextColor = mapTable[LevelIndex].textColor
+      
+      approach_color_to_color(MAPiUI.info.name.color, mapTextColor)
+      else
+        approach_color_to_color(MAPiUI.info.name.color, {r = 255, g = 255, b = 255, a = 255})
+      end
+   
+   --Small photos 
+   
+  for i, map in pairs(mapTable) do
+    djui_hud_set_font(FONT_ALIASED)
+    djui_hud_set_color(255, 255, 255, 255*fadeout)
+    local players = MAPi.check_players_in_hangout(i)
+    local preview = mapTable[i].prev
+    local previewScaleX = (256/preview.width)
+    local previewScaleY = (128/preview.height)
+    local diff = math.abs(i - LevelIndex)
+    local intendedY = (10/(diff+1))
+    local photoPosX =  (((65 * i) - posX) + halfwidth - 20) - 2
+    
+    if diff == 0 then
+      djui_hud_set_rotation(selectedTilt, 0.5, 0.5)
+      
+    djui_hud_set_color(MAPiUI.info.name.color.r, MAPiUI.info.name.color.g, MAPiUI.info.name.color.b, MAPiUI.info.name.color.a*fadeout)
+    
+    djui_hud_render_rect( (((65 * i) - posX) + halfwidth - 20) - 3, djuiheight - 40 - 3 - intendedY, 256*0.2 + 6, 128*0.2 + 10)
+    
+    djui_hud_set_color(255, 255, 255, 255*fadeout)
+      
+    end
+   
+   if (photoPosX > -64) and (photoPosX < djuiwidth) then
+    djui_hud_render_rect(photoPosX, djuiheight - 40 - 2 - intendedY, 256*0.2 + 4, 128*0.2 + 8)
+    
+    djui_hud_render_texture(preview ~= nil and preview or prevNone, ((65 * i) - posX) + halfwidth - 20, djuiheight - 40 - intendedY, previewScaleX*0.2, previewScaleY*0.2)
+    
+    if (players ~= 0) then
+    djui_hud_render_texture(playerhud, ((65 * i) - posX) + halfwidth - (playerhud.width*0.5), djuiheight - 65 - intendedY, 0.5, 0.5)
+    end
+    djui_hud_set_rotation(0x0, 0, 0)
+    djui_hud_print_text(players ~= 0 and tostring(players) or "", ((65 * i) - posX) + halfwidth, djuiheight - 65 - intendedY, 0.5)
+    end
+    
+  end
+  
+  local UPPER_OFFSET = 8 + (djuiheight/4)/(djuiwidth/djuiheight)
+  local LEFT_OFFSET = 12
+  
+  MAPiUI.preview.cur.tex = curMap.prev or prevNone
+  
+  MAPiUI.preview.pos.x = LEFT_OFFSET + 4
+  MAPiUI.preview.pos.y = (mapilogo.height*0.35) + 6/(djuiwidth/djuiheight)
+  MAPiUI.preview.cur.sclX = prevScaleX*0.8
+  MAPiUI.preview.cur.sclY = prevScaleY*0.8
+  MAPiUI.preview.last.sclX = lastPrevScaleX*0.8
+  MAPiUI.preview.last.sclY = lastPrevScaleY*0.8
+  
+  if MAPiUI.preview.cur.sclX > MAPiUI.preview.cur.sclY then
+    MAPiUI.preview.cur.sclX = MAPiUI.preview.cur.sclY
+  end
+  
+  if MAPiUI.preview.cur.sclY > MAPiUI.preview.cur.sclX then
+    MAPiUI.preview.cur.sclY = MAPiUI.preview.cur.sclX
+  end
+  
+  if MAPiUI.preview.last.sclX > MAPiUI.preview.last.sclY then
+    MAPiUI.preview.last.sclX = MAPiUI.preview.last.sclY
+  end
+  
+  if MAPiUI.preview.last.sclY > MAPiUI.preview.last.sclX then
+    MAPiUI.preview.last.sclY = MAPiUI.preview.last.sclX
+  end
+  
+  MAPiUI.preview.rect = {
+    x1 = MAPiUI.preview.pos.x - ((MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.025 - (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)),
+    y1 = MAPiUI.preview.pos.y - ((MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.045 - (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)),
+    x2 = (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.05,
+    y2 = (MAPiUI.preview.cur.tex.height*MAPiUI.preview.cur.sclX)*1.25
+  }
+  
+  --Preview photo
+  djui_hud_set_rotation(MAPiUI.preview.rotation, 0.5, 0.5)
+  djui_hud_render_rect(MAPiUI.preview.rect.x1, MAPiUI.preview.rect.y1, MAPiUI.preview.rect.x2, MAPiUI.preview.rect.y2)
+  
+  djui_hud_set_rotation(MAPiUI.preview.rotation, 0.5, 0.6)
+  djui_hud_render_texture(MAPiUI.preview.cur.tex, MAPiUI.preview.pos.x, MAPiUI.preview.pos.y, MAPiUI.preview.cur.sclX, MAPiUI.preview.cur.sclY)
+  
+  djui_hud_set_color(255,255,255,MAPiUI.preview.last.opacity*fadeout)
+  
+  djui_hud_render_texture(MAPiUI.preview.last.tex or prevNone, MAPiUI.preview.pos.x, MAPiUI.preview.pos.y, MAPiUI.preview.last.sclX, MAPiUI.preview.last.sclY)
+  
+  djui_hud_set_color(255,255,255,255*fadeout)
+  
+  djui_hud_set_rotation(0, 0.5, 0.5)
+  
+  djui_hud_render_texture(MAPiUI.logo.tex, -2, 4, 0.35, 0.35)
+  
+  djui_hud_print_text(random_text[RANDOM_TOP_TEXT], mapilogo.width*0.35 - 2, (mapilogo.height*0.35)/4, 0.35)
+  
+  djui_hud_set_font(FONT_RECOLOR_HUD)
   djui_hud_set_color(MAPiUI.info.name.color.r, MAPiUI.info.name.color.g, MAPiUI.info.name.color.b, MAPiUI.info.name.color.a*fadeout)
   
-  djui_hud_render_rect( (((65 * i) - posX) + halfwidth - 20) - 3, djuiheight - 40 - 3 - intendedY, 256*0.2 + 6, 128*0.2 + 10)
+  local intendedNameScale = MAPiUI.info.name.scale < 1.15 and MAPiUI.info.name.scale or 1.15
+  local intendedCreditScale = MAPiUI.info.credit.scale < 0.5 and MAPiUI.info.credit.scale or 0.5
+  
+  lerpNameScale = lerp(lerpNameScale, intendedNameScale, 0.2)
+  lerpCreditScale = lerp(lerpCreditScale, intendedCreditScale, 0.2)
+  
+  MAPiUI.info.name.txt = mapTable[LevelIndex].name
+  MAPiUI.info.name.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
+  MAPiUI.info.name.pos.y = UPPER_OFFSET
+  
+  MAPiUI.info.name.scale = (MAPiUI.info.name.pos.x/djui_hud_measure_text(mapTable[LevelIndex].name))*0.75
+  MAPiUI.info.credit.scale = (halfwidth/djui_hud_measure_text(mapTable[LevelIndex].credit))*0.85
+  
+  djui_hud_print_text(mapTable[LevelIndex].name, MAPiUI.info.name.pos.x, MAPiUI.info.name.pos.y, lerpNameScale)
   
   djui_hud_set_color(255, 255, 255, 255*fadeout)
+  
+  djui_hud_set_font(FONT_ALIASED)
+  
+  MAPiUI.info.credit.txt = "By: "..tostring(mapTable[LevelIndex].credit)
+  MAPiUI.info.credit.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
+  MAPiUI.info.credit.pos.y = MAPiUI.info.name.pos.y + 28*lerpNameScale - 8
+  
+  djui_hud_print_text(MAPiUI.info.credit.txt, MAPiUI.info.credit.pos.x, MAPiUI.info.credit.pos.y, lerpCreditScale)
+  
+  MAPiUI.info.act.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
+  MAPiUI.info.act.pos.y = MAPiUI.info.credit.pos.y + ((hangoutPlayers > 0 and LevelIndex > 2) and 24 or 16)
+  
+  djui_hud_render_texture(actselect, MAPiUI.info.act.pos.x, MAPiUI.info.act.pos.y, 1, 1)
+    djui_hud_render_texture(selectedact, MAPiUI.info.act.pos.x + 11* (LevelAct-1) - 4, MAPiUI.info.act.pos.y + 4, 0.5, 0.5)
+    
+    for i, num in pairs(actplayers) do
+    if num > 0 then
+      djui_hud_render_texture(playerhud, MAPiUI.info.act.pos.x + 11*(i-1), MAPiUI.info.act.pos.y - 8, 0.25, 0.25)
+    end
+    
+    djui_hud_print_text(num > 0 and tostring(num) or "", MAPiUI.info.act.pos.x + 11*(i-1), MAPiUI.info.act.pos.y - 8, 0.35)
+    
+    
+    end
+    
+    local desc = mapTable[LevelIndex].description
+    MAPiUI.info.desc.txt = string_to_lines(desc, 128 + 148/(djuiheight/djuiwidth))
+    MAPiUI.info.desc.pos.x = MAPiUI.info.name.pos.x
+    MAPiUI.info.desc.pos.y = MAPiUI.info.act.pos.y + 12
+    
+    for i, line in pairs(MAPiUI.info.desc.txt) do
+      djui_hud_print_text(line, MAPiUI.info.desc.pos.x, (10*i) + MAPiUI.info.desc.pos.y, 0.4)
+    end
+    
+    
+    --menu controls
+    djui_hud_set_color(255, 255, 255, fadeout*255*math.abs(sins(get_global_timer()*100)))
+    if (menuHelp == false) then
+      for i, v in pairs(menuControls) do
+        djui_hud_print_text(v, djuiwidth - (djui_hud_measure_text(v)*.25/2) - 32, 8 + 8*i, .25)
+      end
+    end
+    
+    --settings
+    
+    if settings == true then
+      djui_hud_set_color(0, 0, 0, 106)
+      djui_hud_render_rect(-20, -20, djuiwidth + 40, djuiheight + 40)
+      djui_hud_reset_color()
+    end
+  
+      local curSett = mapiSettings[curSetting]
+      local visValue = curSett.txt
+      local desc = string_to_lines(curSett.desc, 140)
+    
+    djui_hud_render_texture(hudsettingsbg, halfwidth - 108, MAPiUI.settings.pos.y - 16, 0.85, 1)
+    
+    djui_hud_set_color(255, 255, 255, 255*fadeout)
+    for i, set in pairs(mapiSettings) do
+      if set.host == true and network_is_server() == false then
+          djui_hud_set_color(127, 127, 127, 255*fadeout)
+      else
+        djui_hud_set_color(255,255,255,255*fadeout)
+      end
+      djui_hud_print_text(set.name, halfwidth - 96, MAPiUI.settings.pos.y - 10 + 14*i, 0.35)
+      end
+       djui_hud_set_color(255,255,255,255*fadeout)
+  
+      djui_hud_print_text(visValue, halfwidth + 70 - (djui_hud_measure_text(visValue)*0.4)/2, MAPiUI.settings.pos.y + 16, 0.4)
+      djui_hud_set_color(0, 0, 0, 72)
+      
+      djui_hud_render_rect(halfwidth - 32, MAPiUI.settings.pos.y + 28, 64, 14*#desc)
+      djui_hud_reset_color()
+      
+      for i, line in pairs(desc) do
+      djui_hud_print_text(line, halfwidth - (djui_hud_measure_text(line)*.35)/2, MAPiUI.settings.pos.y + 14*i + 16, 0.35)
+      end
+  
+    djui_hud_set_color(255, 255, 255, 255*fadeout)
+    
+    djui_hud_render_texture(hudselectedsetting, halfwidth - 106, MAPiUI.settings.pos.y - 9 + 14*curSetting, 0.5, 0.5)
+    
+    djui_hud_print_text("Settings", halfwidth - (djui_hud_measure_text("Settings")*.5)/2, MAPiUI.settings.pos.y - 8, 0.5)
     
   end
- 
- if (photoPosX > -64) and (photoPosX < djuiwidth) then
-  djui_hud_render_rect(photoPosX, djuiheight - 40 - 2 - intendedY, 256*0.2 + 4, 128*0.2 + 8)
-  
-  djui_hud_render_texture(preview ~= nil and preview or prevNone, ((65 * i) - posX) + halfwidth - 20, djuiheight - 40 - intendedY, previewScaleX*0.2, previewScaleY*0.2)
-  
-  if (players ~= 0) then
-  djui_hud_render_texture(playerhud, ((65 * i) - posX) + halfwidth - (playerhud.width*0.5), djuiheight - 65 - intendedY, 0.5, 0.5)
-  end
-  djui_hud_set_rotation(0x0, 0, 0)
-  djui_hud_print_text(players ~= 0 and tostring(players) or "", ((65 * i) - posX) + halfwidth, djuiheight - 65 - intendedY, 0.5)
-  end
-  
-end
-
-local UPPER_OFFSET = 8 + (djuiheight/4)/(djuiwidth/djuiheight)
-local LEFT_OFFSET = 12
-
-MAPiUI.preview.cur.tex = curMap.prev or prevNone
-
-MAPiUI.preview.pos.x = LEFT_OFFSET + 4
-MAPiUI.preview.pos.y = (mapilogo.height*0.35) + 6/(djuiwidth/djuiheight)
-MAPiUI.preview.cur.sclX = prevScaleX*0.8
-MAPiUI.preview.cur.sclY = prevScaleY*0.8
-MAPiUI.preview.last.sclX = lastPrevScaleX*0.8
-MAPiUI.preview.last.sclY = lastPrevScaleY*0.8
-
-if MAPiUI.preview.cur.sclX > MAPiUI.preview.cur.sclY then
-  MAPiUI.preview.cur.sclX = MAPiUI.preview.cur.sclY
-end
-
-if MAPiUI.preview.cur.sclY > MAPiUI.preview.cur.sclX then
-  MAPiUI.preview.cur.sclY = MAPiUI.preview.cur.sclX
-end
-
-if MAPiUI.preview.last.sclX > MAPiUI.preview.last.sclY then
-  MAPiUI.preview.last.sclX = MAPiUI.preview.last.sclY
-end
-
-if MAPiUI.preview.last.sclY > MAPiUI.preview.last.sclX then
-  MAPiUI.preview.last.sclY = MAPiUI.preview.last.sclX
-end
-
-MAPiUI.preview.rect = {
-  x1 = MAPiUI.preview.pos.x - ((MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.025 - (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)),
-  y1 = MAPiUI.preview.pos.y - ((MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.045 - (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)),
-  x2 = (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX)*1.05,
-  y2 = (MAPiUI.preview.cur.tex.height*MAPiUI.preview.cur.sclX)*1.25
-}
-
---Preview photo
-djui_hud_set_rotation(MAPiUI.preview.rotation, 0.5, 0.5)
-djui_hud_render_rect(MAPiUI.preview.rect.x1, MAPiUI.preview.rect.y1, MAPiUI.preview.rect.x2, MAPiUI.preview.rect.y2)
-
-djui_hud_set_rotation(MAPiUI.preview.rotation, 0.5, 0.6)
-djui_hud_render_texture(MAPiUI.preview.cur.tex, MAPiUI.preview.pos.x, MAPiUI.preview.pos.y, MAPiUI.preview.cur.sclX, MAPiUI.preview.cur.sclY)
-
-djui_hud_set_color(255,255,255,MAPiUI.preview.last.opacity*fadeout)
-
-djui_hud_render_texture(MAPiUI.preview.last.tex or prevNone, MAPiUI.preview.pos.x, MAPiUI.preview.pos.y, MAPiUI.preview.last.sclX, MAPiUI.preview.last.sclY)
-
-djui_hud_set_color(255,255,255,255*fadeout)
-
-djui_hud_set_rotation(0, 0.5, 0.5)
-
-djui_hud_render_texture(MAPiUI.logo.tex, -2, 4, 0.35, 0.35)
-
-djui_hud_print_text(random_text[RANDOM_TOP_TEXT], mapilogo.width*0.35 - 2, (mapilogo.height*0.35)/4, 0.35)
-
-djui_hud_set_font(FONT_RECOLOR_HUD)
-djui_hud_set_color(MAPiUI.info.name.color.r, MAPiUI.info.name.color.g, MAPiUI.info.name.color.b, MAPiUI.info.name.color.a*fadeout)
-
-local intendedNameScale = MAPiUI.info.name.scale < 1.15 and MAPiUI.info.name.scale or 1.15
-local intendedCreditScale = MAPiUI.info.credit.scale < 0.5 and MAPiUI.info.credit.scale or 0.5
-
-lerpNameScale = lerp(lerpNameScale, intendedNameScale, 0.2)
-lerpCreditScale = lerp(lerpCreditScale, intendedCreditScale, 0.2)
-
-MAPiUI.info.name.txt = mapTable[LevelIndex].name
-MAPiUI.info.name.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
-MAPiUI.info.name.pos.y = UPPER_OFFSET
-
-MAPiUI.info.name.scale = (MAPiUI.info.name.pos.x/djui_hud_measure_text(mapTable[LevelIndex].name))*0.75
-MAPiUI.info.credit.scale = (halfwidth/djui_hud_measure_text(mapTable[LevelIndex].credit))*0.85
-
-djui_hud_print_text(mapTable[LevelIndex].name, MAPiUI.info.name.pos.x, MAPiUI.info.name.pos.y, lerpNameScale)
-
-djui_hud_set_color(255, 255, 255, 255*fadeout)
-
-djui_hud_set_font(FONT_ALIASED)
-
-MAPiUI.info.credit.txt = "By: "..tostring(mapTable[LevelIndex].credit)
-MAPiUI.info.credit.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
-MAPiUI.info.credit.pos.y = MAPiUI.info.name.pos.y + 28*lerpNameScale - 8
-
-djui_hud_print_text(MAPiUI.info.credit.txt, MAPiUI.info.credit.pos.x, MAPiUI.info.credit.pos.y, lerpCreditScale)
-
-MAPiUI.info.act.pos.x = LEFT_OFFSET + (MAPiUI.preview.cur.tex.width*MAPiUI.preview.cur.sclX) + 4 + 16*(djuiwidth/djuiheight)
-MAPiUI.info.act.pos.y = MAPiUI.info.credit.pos.y + ((hangoutPlayers > 0 and LevelIndex > 2) and 24 or 16)
-
-djui_hud_render_texture(actselect, MAPiUI.info.act.pos.x, MAPiUI.info.act.pos.y, 1, 1)
-  djui_hud_render_texture(selectedact, MAPiUI.info.act.pos.x + 11* (LevelAct-1) - 4, MAPiUI.info.act.pos.y + 4, 0.5, 0.5)
-  
-  for i, num in pairs(actplayers) do
-  if num > 0 then
-    djui_hud_render_texture(playerhud, MAPiUI.info.act.pos.x + 11*(i-1), MAPiUI.info.act.pos.y - 8, 0.25, 0.25)
-  end
-  
-  djui_hud_print_text(num > 0 and tostring(num) or "", MAPiUI.info.act.pos.x + 11*(i-1), MAPiUI.info.act.pos.y - 8, 0.35)
-  
-  
-  end
-  
-  local desc = mapTable[LevelIndex].description
-  MAPiUI.info.desc.txt = string_to_lines(desc, 128 + 148/(djuiheight/djuiwidth))
-  MAPiUI.info.desc.pos.x = MAPiUI.info.name.pos.x
-  MAPiUI.info.desc.pos.y = MAPiUI.info.act.pos.y + 12
-  
-  for i, line in pairs(MAPiUI.info.desc.txt) do
-    djui_hud_print_text(line, MAPiUI.info.desc.pos.x, (10*i) + MAPiUI.info.desc.pos.y, 0.4)
-  end
-  
-  
-  
-  --settings
-  
-  if settings == true then
-    djui_hud_set_color(0, 0, 0, 106)
-    djui_hud_render_rect(-20, -20, djuiwidth + 40, djuiheight + 40)
-    djui_hud_reset_color()
-  end
-
-    local curSett = mapiSettings[curSetting]
-    local visValue = curSett.txt
-    local desc = string_to_lines(curSett.desc, 140)
-  
-  djui_hud_render_texture(hudsettingsbg, halfwidth - 108, MAPiUI.settings.pos.y - 16, 0.85, 1)
-  
-  djui_hud_set_color(255, 255, 255, 255*fadeout)
-  for i, set in pairs(mapiSettings) do
-    if set.host == true and network_is_server() == false then
-        djui_hud_set_color(127, 127, 127, 255*fadeout)
-    else
-      djui_hud_set_color(255,255,255,255*fadeout)
-    end
-    djui_hud_print_text(set.name, halfwidth - 96, MAPiUI.settings.pos.y - 10 + 14*i, 0.35)
-    end
-     djui_hud_set_color(255,255,255,255*fadeout)
-
-    djui_hud_print_text(visValue, halfwidth + 70 - (djui_hud_measure_text(visValue)*0.4)/2, MAPiUI.settings.pos.y + 16, 0.4)
-    djui_hud_set_color(0, 0, 0, 72)
-    
-    djui_hud_render_rect(halfwidth - 32, MAPiUI.settings.pos.y + 28, 64, 14*#desc)
-    djui_hud_reset_color()
-    
-    for i, line in pairs(desc) do
-    djui_hud_print_text(line, halfwidth - (djui_hud_measure_text(line)*.35)/2, MAPiUI.settings.pos.y + 14*i + 16, 0.35)
-    end
-
-  djui_hud_set_color(255, 255, 255, 255*fadeout)
-  
-  djui_hud_render_texture(hudselectedsetting, halfwidth - 106, MAPiUI.settings.pos.y - 9 + 14*curSetting, 0.5, 0.5)
-  
-  djui_hud_print_text("Settings", halfwidth - (djui_hud_measure_text("Settings")*.5)/2, MAPiUI.settings.pos.y - 8, 0.5)
-
-end
 end
 hook_event(HOOK_ON_HUD_RENDER, on_hud_render)
